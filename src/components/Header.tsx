@@ -30,7 +30,7 @@ function Header() {
           <li><Link to="/about" style={{ color: 'white' }}>About</Link></li>
           <li>
             <a
-              href="/control-panel.html"
+              href="./control-panel.html"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'white' }}
