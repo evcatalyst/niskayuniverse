@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceMarkerConfig",
+  "type": "object",
+  "properties": {
+    "palette": {
+      "type": "string",
+      "enum": ["palette-okabe", "palette-dark2", "palette-mono"]
+    },
+    "tokenSize": {
+      "type": "integer",
+      "minimum": 12,
+      "maximum": 40
+    },
+    "ringInset": {
+      "type": "integer",
+      "minimum": 22,
+      "maximum": 42
+    },
+    "patterns": {
+      "type": "boolean"
+    },
+    "pulseLead": {
+      "type": "boolean"
+    },
+    "dashedUnknown": {
+      "type": "boolean"
+    },
+    "style": {
+      "type": "string",
+      "enum": ["split", "nested", "donut", "hex", "halo", "band", "pin"]
+    },
+    "lodCityMax": {
+      "type": "number",
+      "minimum": 10,
+      "maximum": 14
+    },
+    "lodNhoodMax": {
+      "type": "number",
+      "minimum": 14,
+      "maximum": 16
+    },
+    "lodCityStyle": {
+      "type": "string",
+      "enum": ["split", "nested", "donut", "hex", "halo", "band", "pin"]
+    },
+    "lodNhoodStyle": {
+      "type": "string",
+      "enum": ["split", "nested", "donut", "hex", "halo", "band", "pin"]
+    },
+    "lodParcelStyle": {
+      "type": "string",
+      "enum": ["split", "nested", "donut", "hex", "halo", "band", "pin"]
+    },
+    "tooltipFields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "showLegend": {
+      "type": "boolean"
+    },
+    "cluster": {
+      "type": "boolean"
+    },
+    "clusterMinPts": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 10
+    },
+    "animation": {
+      "type": "boolean"
+    },
+    "verifiedOutline": {
+      "type": "boolean"
+    }
+  },
+  "required": ["palette", "tokenSize", "ringInset", "patterns", "pulseLead", "dashedUnknown", "style"],
+  "additionalProperties": false
+}
