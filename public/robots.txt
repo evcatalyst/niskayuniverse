@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://yourusername.github.io/service-line-markers/sitemap.xml
+Sitemap: https://evcatalyst.github.io/service-line-markers/sitemap.xml
