@@ -73,6 +73,61 @@ function Home() {
             Open Panel
           </a>
         </Card>
+
+        <Card>
+          <h3>Map Examples</h3>
+          <p>View interactive map examples with service-line markers.</p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <a
+              href="./examples/mapbox-gl.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '0.5rem 1rem',
+                background: '#7952b3',
+                color: 'white',
+                borderRadius: '4px',
+                textDecoration: 'none',
+                fontSize: '0.9rem'
+              }}
+            >
+              Mapbox GL
+            </a>
+            <a
+              href="./examples/leaflet.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '0.5rem 1rem',
+                background: '#28a745',
+                color: 'white',
+                borderRadius: '4px',
+                textDecoration: 'none',
+                fontSize: '0.9rem'
+              }}
+            >
+              Leaflet
+            </a>
+            <a
+              href="./examples/deckgl.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '0.5rem 1rem',
+                background: '#dc3545',
+                color: 'white',
+                borderRadius: '4px',
+                textDecoration: 'none',
+                fontSize: '0.9rem'
+              }}
+            >
+              Deck.gl
+            </a>
+          </div>
+        </Card>
       </div>
 
       <section style={{ textAlign: 'center', padding: '2rem 0' }}>
