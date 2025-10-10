@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Line Markers - Mapbox GL Example</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+    .marker {
+      display: inline-block;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease-in-out;
+    }
+    .marker:hover { transform: scale(1.1); }
+    .marker.split { background: linear-gradient(to right, #009E73 50%, #D55E00 50%); }
+    .marker.nested {
+      background: #009E73;
+      position: relative;
+    }
+    .marker.nested::before {
+      content: '';
+      position: absolute;
+      top: 25%;
+      left: 25%;
+      width: 50%;
+      height: 50%;
+      background: #D55E00;
+      border-radius: 50%;
+    }
+    .marker.halo {
+      background: #009E73;
+      box-shadow: 0 0 8px #009E73;
+      position: relative;
+    }
+    .marker.halo::before {
+      content: '';
+      position: absolute;
+      top: 30%;
+      left: 30%;
+      width: 40%;
+      height: 40%;
+      background: #D55E00;
+      border-radius: 50%;
+    }
+    .pulse-lead { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .outline-unknown { border: 1px dashed #bdbdbd; }
+    .outline-verified { border: 1px solid #56B4E9; }
+    .unknown-pattern { background: repeating-linear-gradient(45deg, #bdbdbd 0 3px, #eeeeee 3px 6px); }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+  <script>
+    // Fallback to MapLibre if no Mapbox token
+    if (!mapboxgl.accessToken) {
+      document.head.innerHTML += '<link href="https://unpkg.com/maplibre-gl@3.0.0/dist/maplibre-gl.css" rel="stylesheet">';
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/maplibre-gl@3.0.0/dist/maplibre-gl.js';
+      script.onload = () => initMap();
+      document.head.appendChild(script);
+      window.mapboxgl = window.maplibregl;
+    } else {
+      initMap();
+    }
+
+    let map;
+    let markers = [];
+    let config = {
+      palette: 'palette-okabe',
+      tokenSize: 24,
+      ringInset: 34,
+      style: 'split',
+      patterns: true,
+      pulseLead: true,
+      dashedUnknown: true,
+      verifiedOutline: false,
+      animation: true,
+      showLegend: true,
+      cluster: false,
+      clusterMinPts: 3,
+      lodCityMax: 12,
+      lodNhoodMax: 15,
+      lodCityStyle: 'halo',
+      lodNhoodStyle: 'nested',
+      lodParcelStyle: 'split',
+      tooltipFields: ['address', 'private_type', 'public_type']
+    };
+
+    function initMap() {
+      map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [-74.5, 40],
+        zoom: 9
+      });
+
+      map.on('load', () => {
+        loadMarkers();
+        map.on('zoom', updateMarkers);
+      });
+    }
+
+    async function loadMarkers() {
+      try {
+        const response = await fetch('/data/markers.json');
+        const data = await response.json();
+        addMarkers(data);
+      } catch (error) {
+        console.error('Failed to load markers:', error);
+      }
+    }
+
+    function addMarkers(data) {
+      data.forEach(feature => {
+        const el = createMarkerElement(feature);
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([-74.5 + (Math.random() - 0.5) * 0.1, 40 + (Math.random() - 0.5) * 0.1])
+          .addTo(map);
+
+        markers.push(marker);
+      });
+    }
+
+    function createMarkerElement(feature) {
+      const zoom = map.getZoom();
+      const style = lodStyle(config, zoom);
+
+      const div = document.createElement('div');
+      div.className = 'marker ' + style;
+      div.style.width = config.tokenSize + 'px';
+      div.style.height = config.tokenSize + 'px';
+      div.style.setProperty('--private-color', getColor(feature.private_type));
+      div.style.setProperty('--public-color', getColor(feature.public_type));
+
+      if (config.pulseLead && (feature.private_type === 'lead' || feature.public_type === 'lead') && config.animation) {
+        div.classList.add('pulse-lead');
+      }
+      if (config.dashedUnknown && (feature.private_type === 'unknown' || feature.public_type === 'unknown')) {
+        div.classList.add('outline-unknown');
+      }
+      if (config.verifiedOutline && feature.verified) {
+        div.classList.add('outline-verified');
+      }
+      if (config.patterns && (feature.private_type === 'unknown' || feature.public_type === 'unknown')) {
+        div.classList.add('unknown-pattern');
+      }
+
+      return div;
+    }
+
+    function updateMarkers() {
+      const zoom = map.getZoom();
+      const newStyle = lodStyle(config, zoom);
+
+      if (newStyle !== config.style) {
+        config.style = newStyle;
+        markers.forEach(marker => {
+          const el = marker.getElement();
+          el.className = el.className.replace(/marker \w+/, 'marker ' + newStyle);
+        });
+      }
+    }
+
+    function lodStyle(config, zoom) {
+      if (zoom <= config.lodCityMax) {
+        return config.lodCityStyle;
+      } else if (zoom <= config.lodNhoodMax) {
+        return config.lodNhoodStyle;
+      } else {
+        return config.lodParcelStyle;
+      }
+    }
+
+    function getColor(material) {
+      switch (material) {
+        case 'lead': return '#D55E00';
+        case 'copper': return '#009E73';
+        case 'galvanized': return '#0072B2';
+        case 'plastic': return '#CC79A7';
+        default: return '#bdbdbd';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "parcel_1",
+    "address": "1 Leanne Graham St, City, ST 10000",
+    "private_type": "copper",
+    "public_type": "lead",
+    "verified": true,
+    "confidence": 0.85,
+    "last_verified": "2024-11-12"
+  },
+  {
+    "id": "parcel_2",
+    "address": "2 Ervin Howell St, City, ST 10001",
+    "private_type": "plastic",
+    "public_type": "galvanized",
+    "verified": false,
+    "confidence": 0.72,
+    "last_verified": "2024-10-15"
+  },
+  {
+    "id": "parcel_3",
+    "address": "3 Clementine Bauch St, City, ST 10002",
+    "private_type": "unknown",
+    "public_type": "copper",
+    "verified": true,
+    "confidence": 0.91,
+    "last_verified": "2024-12-01"
+  }
+]

@@ -1,0 +1,2 @@
+timestamp_iso,street address,town,zip,lat,lng,ph_value,sample_type,sample_temp_c,residual_chlorine_mg_l,alkalinity_mg_l_as_caco3,hardness_mg_l_as_caco3,tds_mg_l,conductivity_us_cm,copper_strip_result,lead_strip_result,meter_brand_model,photo_url,consent_public_display,notes
+2025-10-03T18:42:00-04:00,123 Maple St,Niskayuna,12309,42.816,-73.896,7.5,first_draw,20.3,0.2,40,70,120,225,negative,negative,Apera PH60,,yes,Kitchen tap
