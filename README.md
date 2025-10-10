@@ -154,4 +154,4 @@ See `public/config.schema.json` for the complete JSON Schema definition of marke
 
 ## License
 
-MIT
+MIT# Updated
