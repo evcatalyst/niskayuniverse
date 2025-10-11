@@ -47,17 +47,19 @@ async function init() {
     ];
   }
 
-  // Add random positions
+  // Ensure all data has positions
   data.forEach((d, i) => {
-    d.position = [-74.5 + (Math.random() - 0.5) * 0.1, 40 + (Math.random() - 0.5) * 0.1];
+    if (!d.position) {
+      d.position = [-73.85 + (Math.random() - 0.5) * 0.1, 42.78 + (Math.random() - 0.5) * 0.1];
+    }
   });
 
   deck = new Deck({
     container: 'container',
     initialViewState: {
-      longitude: -74.5,
-      latitude: 40,
-      zoom: 9
+      longitude: -73.85,
+      latitude: 42.78,
+      zoom: 13
     },
     controller: true,
     layers: [createLayer()]

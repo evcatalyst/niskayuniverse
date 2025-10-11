@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import Skeleton from '../components/Skeleton'
 
 interface Item {
@@ -7,6 +6,14 @@ interface Item {
   name: string
   email: string
   username: string
+  address: string
+  town: string
+  zip: string
+  road_side: string
+  private_side: string
+  verified: boolean
+  confidence: string
+  last_verified: string
 }
 
 function DataList() {
@@ -15,7 +22,7 @@ function DataList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'email'>('name')
+  const [sortBy, setSortBy] = useState<'name' | 'address'>('name')
 
   useEffect(() => {
     fetch('./data/items.json')
@@ -37,14 +44,17 @@ function DataList() {
   useEffect(() => {
     let filtered = items.filter(item =>
       item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.email.toLowerCase().includes(search.toLowerCase())
+      item.address.toLowerCase().includes(search.toLowerCase()) ||
+      item.road_side.toLowerCase().includes(search.toLowerCase()) ||
+      item.private_side.toLowerCase().includes(search.toLowerCase()) ||
+      item.zip.includes(search)
     )
 
     filtered.sort((a, b) => {
       if (sortBy === 'name') {
         return a.name.localeCompare(b.name)
       } else {
-        return a.email.localeCompare(b.email)
+        return a.address.localeCompare(b.address)
       }
     })
 
@@ -92,7 +102,7 @@ function DataList() {
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <input
           type="text"
-          placeholder="Search by name or email..."
+          placeholder="Search by address, material, or zip code..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{
@@ -104,11 +114,11 @@ function DataList() {
         />
         <select
           value={sortBy}
-          onChange={e => setSortBy(e.target.value as 'name' | 'email')}
+          onChange={e => setSortBy(e.target.value as 'name' | 'address')}
           style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
         >
-          <option value="name">Sort by Name</option>
-          <option value="email">Sort by Email</option>
+          <option value="name">Sort by Street Name</option>
+          <option value="address">Sort by Address</option>
         </select>
       </div>
 
@@ -129,17 +139,40 @@ function DataList() {
             <div key={item.id} style={{
               padding: '1rem',
               border: '1px solid #dee2e6',
-              borderRadius: '4px',
-              background: 'white'
+              borderRadius: '8px',
+              background: 'white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
-              <h3 style={{ margin: '0 0 0.5rem 0' }}>{item.name}</h3>
-              <p style={{ margin: '0 0 0.5rem 0', color: '#666' }}>{item.email}</p>
-              <Link to={`/detail/${item.id}`} style={{
-                color: '#007bff',
-                textDecoration: 'none'
-              }}>
-                View Details →
-              </Link>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem' }}>{item.address}</h3>
+                <span style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  fontWeight: '500',
+                  background: item.verified ? '#d4edda' : '#f8d7da',
+                  color: item.verified ? '#155724' : '#721c24'
+                }}>
+                  {item.verified ? 'Verified' : 'Unverified'}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                <div>
+                  <strong>Road Side:</strong> {item.road_side}
+                </div>
+                <div>
+                  <strong>Private Side:</strong> {item.private_side}
+                </div>
+                <div>
+                  <strong>Location:</strong> {item.town}, {item.zip}
+                </div>
+                <div>
+                  <strong>Confidence:</strong> {(parseFloat(item.confidence) * 100).toFixed(0)}%
+                </div>
+              </div>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#888' }}>
+                Last verified: {new Date(item.last_verified).toLocaleDateString()}
+              </div>
             </div>
           ))}
         </div>
