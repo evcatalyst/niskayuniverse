@@ -116,7 +116,7 @@
         });
 
         const marker = L.marker(
-          feature.position || [40 + (Math.random() - 0.5) * 0.1, -74.5 + (Math.random() - 0.5) * 0.1],
+          feature.position ? [feature.position[1], feature.position[0]] : [40 + (Math.random() - 0.5) * 0.1, -74.5 + (Math.random() - 0.5) * 0.1],
           { icon }
         ).addTo(map);
 
