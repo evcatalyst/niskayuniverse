@@ -12,7 +12,8 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "a11y": "pa11y-ci"
+    "a11y": "pa11y-ci",
+    "geocode": "node scripts/geocode-addresses.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",

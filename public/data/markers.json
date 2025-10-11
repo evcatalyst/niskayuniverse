@@ -10,9 +10,11 @@
     "confidence": 0.85,
     "last_verified": "2024-11-26",
     "position": [
-      -73.80551114881902,
-      42.80048183308106
-    ]
+      -73.8647668,
+      42.7712273
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_2",
@@ -25,9 +27,11 @@
     "confidence": 0.8,
     "last_verified": "2025-08-02",
     "position": [
-      -73.85764946742562,
-      42.775640738905665
-    ]
+      -73.8647456,
+      42.7715397
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_3",
@@ -40,9 +44,11 @@
     "confidence": 0.71,
     "last_verified": "2025-09-02",
     "position": [
-      -73.81280232930946,
-      42.77045247791227
-    ]
+      -73.8643965,
+      42.7718093
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_4",
@@ -55,9 +61,11 @@
     "confidence": 0.87,
     "last_verified": "2025-03-30",
     "position": [
-      -73.80143084205316,
-      42.739141249057965
-    ]
+      -73.8644845,
+      42.7721545
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_5",
@@ -70,9 +78,11 @@
     "confidence": 0.88,
     "last_verified": "2025-01-03",
     "position": [
-      -73.87641880701142,
-      42.794844900985225
-    ]
+      -73.8636774,
+      42.7723199
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_6",
@@ -85,9 +95,11 @@
     "confidence": 0.98,
     "last_verified": "2025-03-22",
     "position": [
-      -73.8172863329816,
-      42.801033594031054
-    ]
+      -73.8645155,
+      42.772554
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_7",
@@ -100,9 +112,11 @@
     "confidence": 0.81,
     "last_verified": "2025-09-18",
     "position": [
-      -73.89394490225679,
-      42.756448547557426
-    ]
+      -73.8535194,
+      42.7960152
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_8",
@@ -115,9 +129,11 @@
     "confidence": 0.88,
     "last_verified": "2025-02-12",
     "position": [
-      -73.88647027692788,
-      42.76398051522287
-    ]
+      -73.8539023,
+      42.7956435
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_9",
@@ -130,9 +146,11 @@
     "confidence": 0.78,
     "last_verified": "2025-01-12",
     "position": [
-      -73.82597282184908,
-      42.741938881405375
-    ]
+      -73.854296,
+      42.7953016
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_10",
@@ -145,9 +163,11 @@
     "confidence": 0.99,
     "last_verified": "2025-05-12",
     "position": [
-      -73.80358687239874,
-      42.77190381183424
-    ]
+      -73.8538071,
+      42.7946496
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_11",
@@ -160,9 +180,11 @@
     "confidence": 0.92,
     "last_verified": "2024-10-27",
     "position": [
-      -73.85820763151094,
-      42.74927761067106
-    ]
+      -73.8550124,
+      42.7952379
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_12",
@@ -175,9 +197,11 @@
     "confidence": 0.82,
     "last_verified": "2025-07-15",
     "position": [
-      -73.86335824698155,
-      42.813867200936826
-    ]
+      -73.8542396,
+      42.7943179
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_13",
@@ -190,9 +214,11 @@
     "confidence": 0.82,
     "last_verified": "2025-04-19",
     "position": [
-      -73.86236225463712,
-      42.82231663172787
-    ]
+      -73.8549428,
+      42.7940187
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_14",
@@ -205,9 +231,11 @@
     "confidence": 0.86,
     "last_verified": "2025-04-17",
     "position": [
-      -73.80868823054247,
-      42.78017802146651
-    ]
+      -73.8555716,
+      42.7941089
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_15",
@@ -220,9 +248,11 @@
     "confidence": 0.74,
     "last_verified": "2024-10-20",
     "position": [
-      -73.88270648392137,
-      42.79607875847711
-    ]
+      -73.8561634,
+      42.79478
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_16",
@@ -235,9 +265,11 @@
     "confidence": 0.95,
     "last_verified": "2025-01-21",
     "position": [
-      -73.88377472549232,
-      42.733248888670616
-    ]
+      -73.8883161,
+      42.7655361
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_17",
@@ -250,9 +282,11 @@
     "confidence": 0.79,
     "last_verified": "2024-11-01",
     "position": [
-      -73.89451712147255,
-      42.76632384960752
-    ]
+      -73.8883161,
+      42.7655361
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_18",
@@ -265,9 +299,11 @@
     "confidence": 0.76,
     "last_verified": "2025-03-05",
     "position": [
-      -73.86729148620223,
-      42.7855630982612
-    ]
+      -73.8883161,
+      42.7655361
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_19",
@@ -280,9 +316,11 @@
     "confidence": 0.86,
     "last_verified": "2025-02-27",
     "position": [
-      -73.8355654063886,
-      42.78903329541581
-    ]
+      -73.8883161,
+      42.7655361
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_20",
@@ -295,9 +333,11 @@
     "confidence": 0.95,
     "last_verified": "2025-01-25",
     "position": [
-      -73.88196457484872,
-      42.77171228202821
-    ]
+      -73.8883161,
+      42.7655361
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
   },
   {
     "id": "parcel_21",
