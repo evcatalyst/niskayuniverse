@@ -28,7 +28,7 @@ let data = [];
 async function init() {
   // Load data
   try {
-    const response = await fetch('/data/markers.json');
+    const response = await fetch('../data/markers.json');
     data = await response.json();
   } catch (error) {
     console.error('Failed to load markers:', error);
