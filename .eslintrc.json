@@ -30,6 +30,7 @@
   },
   "ignorePatterns": [
     "dist/**",
+    "assets/**",
     "public/examples/**",
     "node_modules/**"
   ]
