@@ -1,3 +1,5 @@
+import type { MarkerConfig } from './tokens';
+
 export type Palette = 'palette-okabe' | 'palette-dark2' | 'palette-mono';
 
 export const PALETTES: Record<Palette, string> = {
@@ -15,7 +17,7 @@ export function getCurrentPalette(): Palette {
   return palette || 'palette-okabe';
 }
 
-export function colorFor(material: string, _config: any): string {
+export function colorFor(material: string, _config?: MarkerConfig): string { // eslint-disable-line @typescript-eslint/no-unused-vars
   const palette = getCurrentPalette();
   applyPalette(palette); // Ensure applied
 

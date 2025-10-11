@@ -59,14 +59,14 @@ Backend (GitHub Actions)
         <h3>GitHub Pages Setup</h3>
         <ol>
           <li>Enable GitHub Pages in repository settings</li>
-          <li>Set source to "GitHub Actions"</li>
+          <li>Set source to &ldquo;GitHub Actions&rdquo;</li>
           <li>Push to main branch to trigger deployment</li>
           <li>Optional: Add custom domain via CNAME file</li>
         </ol>
 
         <h3>Preview Deployments</h3>
         <p>
-          Pull requests automatically create preview deployments. Check the "Deployments" tab
+          Pull requests automatically create preview deployments. Check the &ldquo;Deployments&rdquo; tab
           in GitHub to view live previews before merging.
         </p>
       </section>

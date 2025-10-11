@@ -42,7 +42,7 @@ function DataList() {
   }, [])
 
   useEffect(() => {
-    let filtered = items.filter(item =>
+    const filtered = items.filter(item =>
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.address.toLowerCase().includes(search.toLowerCase()) ||
       item.road_side.toLowerCase().includes(search.toLowerCase()) ||
