@@ -29,7 +29,10 @@ async function init() {
   // Load data
   try {
     const response = await fetch('../data/markers.json');
-    data = await response.json();
+    let data = await response.json();
+
+    // Limit to first 500 markers for performance
+    data = data.slice(0, 500);
   } catch (error) {
     console.error('Failed to load markers:', error);
     // Fallback data

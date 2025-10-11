@@ -16,9 +16,9 @@
       transition: transform 0.15s ease-in-out;
     }
     .marker:hover { transform: scale(1.1); }
-    .marker.split { background: linear-gradient(to right, #009E73 50%, #D55E00 50%); }
+    .marker.split { background: linear-gradient(to right, var(--public-color, #009E73) 50%, var(--private-color, #D55E00) 50%); }
     .marker.nested {
-      background: #009E73;
+      background: var(--public-color, #009E73);
       position: relative;
     }
     .marker.nested::before {
@@ -28,12 +28,12 @@
       left: 25%;
       width: 50%;
       height: 50%;
-      background: #D55E00;
+      background: var(--private-color, #D55E00);
       border-radius: 50%;
     }
     .marker.halo {
-      background: #009E73;
-      box-shadow: 0 0 8px #009E73;
+      background: var(--public-color, #009E73);
+      box-shadow: 0 0 8px var(--public-color, #009E73);
       position: relative;
     }
     .marker.halo::before {
@@ -43,7 +43,7 @@
       left: 30%;
       width: 40%;
       height: 40%;
-      background: #D55E00;
+      background: var(--private-color, #D55E00);
       border-radius: 50%;
     }
     .pulse-lead { animation: pulse 2s infinite; }
@@ -110,7 +110,11 @@
     async function loadMarkers() {
       try {
         const response = await fetch('../data/markers.json');
-        const data = await response.json();
+        let data = await response.json();
+
+        // Limit to first 500 markers for performance
+        data = data.slice(0, 500);
+
         addMarkers(data);
       } catch (error) {
         console.error('Failed to load markers:', error);
