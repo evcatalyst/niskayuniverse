@@ -5,15 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
-    "e2e": "playwright test",
-    "a11y": "pa11y-ci",
-    "geocode": "node scripts/geocode-addresses.mjs"
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:accessibility": "pa11y-ci",
+    "convert": "node scripts/convert-csv-to-json.js",
+    "geocode": "node scripts/geocode-addresses.mjs",
+    "geocode:ci": "node scripts/geocode-addresses-ci.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",

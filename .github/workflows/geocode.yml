@@ -1,0 +1,55 @@
+name: Geocode Addresses
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of addresses to geocode per batch'
+        required: false
+        default: '100'
+        type: string
+      delay_ms:
+        description: 'Delay between requests in milliseconds'
+        required: false
+        default: '500'
+        type: string
+
+jobs:
+  geocode:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run geocoding script
+      env:
+        GEOCODE_BATCH_SIZE: ${{ inputs.batch_size || 50 }}
+        GEOCODE_DELAY_MS: ${{ inputs.delay_ms || 300 }}
+      run: |
+        echo "Starting geocoding with batch size: $GEOCODE_BATCH_SIZE, delay: $GEOCODE_DELAY_MS ms"
+        npm run geocode:ci
+
+    - name: Copy geocoded data to public
+      run: cp data/markers.json public/data/markers.json
+
+    - name: Commit geocoded results
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/markers.json public/data/markers.json
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Update geocoded coordinates (batch: ${{ inputs.batch_size || 100 }}, delay: ${{ inputs.delay_ms || 500 }}ms)"
+          git push
+        fi
