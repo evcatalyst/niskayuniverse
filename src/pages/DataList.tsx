@@ -25,7 +25,7 @@ function DataList() {
   const [sortBy, setSortBy] = useState<'name' | 'address'>('name')
 
   useEffect(() => {
-    fetch('./data/items.json')
+    fetch('/niskayuniverse/data/items.json')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load data')
         return res.json()

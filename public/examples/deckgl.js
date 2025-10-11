@@ -28,7 +28,7 @@ let data = [];
 async function init() {
   // Load data
   try {
-    const response = await fetch('../data/markers.json');
+    const response = await fetch('../../data/markers.json');
     let data = await response.json();
 
     // Limit to first 500 markers for performance
