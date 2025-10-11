@@ -18,7 +18,7 @@ function Detail() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/data/items.json')
+    fetch('./data/items.json')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load data')
         return res.json()
