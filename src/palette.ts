@@ -15,7 +15,7 @@ export function getCurrentPalette(): Palette {
   return palette || 'palette-okabe';
 }
 
-export function colorFor(material: string, config: any): string {
+export function colorFor(material: string, _config: any): string {
   const palette = getCurrentPalette();
   applyPalette(palette); // Ensure applied
 
