@@ -21,6 +21,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PAT }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -28,16 +30,25 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
+    - name: Install GDAL
+      run: sudo apt-get update && sudo apt-get install -y gdal-bin unzip
+
+    - name: Install Tippecanoe
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+        sudo apt-get update
+        sudo apt-get install -y tippecanoe
+
     - name: Install dependencies
       run: npm ci
 
-    - name: Run geocoding script
-      env:
-        GEOCODE_BATCH_SIZE: ${{ inputs.batch_size || 50 }}
-        GEOCODE_DELAY_MS: ${{ inputs.delay_ms || 300 }}
-      run: |
-        echo "Starting geocoding with batch size: $GEOCODE_BATCH_SIZE, delay: $GEOCODE_DELAY_MS ms"
-        npm run geocode:ci
+    - name: Run Census geocoding script
+      run: npm run geocode:nys
+
+    - name: Generate PMTiles
+      run: npm run generate:pmtiles
 
     - name: Copy geocoded data to public
       run: cp data/markers.json public/data/markers.json
@@ -46,10 +57,10 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add data/markers.json public/data/markers.json
+        git add data/markers.json public/data/markers.json data/service-lines.geojson public/tiles/service-lines.pmtiles
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "Update geocoded coordinates (batch: ${{ inputs.batch_size || 100 }}, delay: ${{ inputs.delay_ms || 500 }}ms)"
-          git push
+          git commit -m "Update geocoded coordinates and PMTiles using NYS GIS data"
+          git push https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
         fi

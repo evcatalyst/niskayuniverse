@@ -1,0 +1,53 @@
+[
+  {
+    "id": "parcel_1",
+    "address": "671 ACORN DRIVE",
+    "town": "Niskayuna",
+    "zip": "12309",
+    "private_type": "copper",
+    "public_type": "copper",
+    "verified": false,
+    "confidence": 0.85,
+    "last_verified": "2024-11-26",
+    "position": [
+      -73.8647668,
+      42.7712273
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
+  },
+  {
+    "id": "parcel_2",
+    "address": "675 ACORN DRIVE",
+    "town": "Niskayuna",
+    "zip": "12309",
+    "private_type": "copper",
+    "public_type": "copper",
+    "verified": true,
+    "confidence": 0.8,
+    "last_verified": "2025-08-02",
+    "position": [
+      -73.8647456,
+      42.7715397
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
+  },
+  {
+    "id": "parcel_3",
+    "address": "679 ACORN DRIVE",
+    "town": "Niskayuna",
+    "zip": "12309",
+    "private_type": "copper",
+    "public_type": "copper",
+    "verified": true,
+    "confidence": 0.71,
+    "last_verified": "2025-09-02",
+    "position": [
+      -73.8643965,
+      42.7718093
+    ],
+    "geocode_source": "nominatim",
+    "geocode_confidence": 1
+  }
+]

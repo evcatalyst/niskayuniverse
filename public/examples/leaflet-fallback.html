@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Line Markers - JSON Demo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+
+    .service-tooltip {
+      font-family: Arial, sans-serif;
+      max-width: 250px;
+    }
+
+    .service-tooltip h4 {
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+
+    .service-tooltip p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let markers = [];
+    let markerLayer;
+
+    function initMap() {
+      map = L.map('map').setView([42.78, -73.85], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      loadMarkers();
+    }
+
+    function loadMarkers() {
+      fetch('../data/markers.json')
+        .then(response => response.json())
+        .then(data => {
+          markers = data.filter(m => m.position && m.position.length === 2);
+          updateMarkers();
+        })
+        .catch(error => console.error('Error loading markers:', error));
+    }
+
+    function updateMarkers() {
+      // Clear existing markers
+      if (markerLayer) {
+        map.removeLayer(markerLayer);
+      }
+
+      const zoom = map.getZoom();
+      const visibleMarkers = markers.filter(m => shouldShowMarker(m, zoom));
+
+      markerLayer = L.layerGroup(
+        visibleMarkers.map(marker => createMarker(marker, zoom))
+      ).addTo(map);
+    }
+
+    function shouldShowMarker(marker, zoom) {
+      // Only show markers that are geocoded
+      if (!marker.position) return false;
+
+      // At low zoom, show a sample of markers to avoid overcrowding
+      if (zoom < 14) {
+        // Show every 10th marker at low zoom
+        return marker.id % 10 === 0;
+      }
+
+      return true;
+    }
+
+    function createMarker(marker, zoom) {
+      const style = getMarkerStyle(marker, zoom);
+
+      return L.circleMarker(marker.position, style)
+        .bindPopup(createTooltip(marker));
+    }
+
+    function getMarkerStyle(marker, zoom) {
+      const material = marker.properties?.material || 'unknown';
+      const side = marker.properties?.side || 'unknown';
+
+      let style = {
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+      };
+
+      // Color mapping based on material
+      const colorMap = {
+        'lead': '#FF6B6B',
+        'copper': '#4ECDC4',
+        'galvanized': '#45B7D1',
+        'plastic': '#96CEB4',
+        'unknown': '#D4A574'
+      };
+
+      style.color = colorMap[material] || colorMap.unknown;
+
+      // Zoom-based styling
+      if (zoom <= 14) {
+        // Halo style - larger, semi-transparent
+        style.radius = 8;
+        style.fillOpacity = 0.4;
+        style.weight = 1;
+      } else if (zoom <= 16) {
+        // Nested style - medium
+        style.radius = 6;
+        style.fillOpacity = 0.7;
+        style.weight = 2;
+      } else {
+        // Split style - small, side-specific colors
+        style.radius = 4;
+        style.fillOpacity = 1.0;
+        style.weight = 1;
+
+        if (side === 'left') {
+          style.color = '#FF8C42';
+        } else if (side === 'right') {
+          style.color = '#6B73FF';
+        }
+      }
+
+      return style;
+    }
+
+    function createTooltip(marker) {
+      const material = marker.properties?.material || 'Unknown';
+      const side = marker.properties?.side || 'Unknown';
+      const address = marker.properties?.address || 'Unknown Address';
+      const verified = marker.properties?.verified ? 'Yes' : 'No';
+
+      return `
+        <div class="service-tooltip">
+          <h4>Service Line</h4>
+          <p><strong>Address:</strong> ${address}</p>
+          <p><strong>Material:</strong> ${material}</p>
+          <p><strong>Side:</strong> ${side}</p>
+          <p><strong>Verified:</strong> ${verified}</p>
+        </div>
+      `;
+    }
+
+    // Update markers when zoom changes
+    map.on('zoomend', updateMarkers);
+
+    initMap();
+  </script>
+</body>
+</html>

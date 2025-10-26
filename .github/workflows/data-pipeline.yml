@@ -1,0 +1,82 @@
+name: Data Pipeline
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update even if no changes'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PAT }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install GDAL and Tippecanoe
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gdal-bin unzip software-properties-common
+        sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+        sudo apt-get update
+        sudo apt-get install -y tippecanoe
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Ingest PDF data
+      run: npm run ingest:pdf
+
+    - name: Run NYS GIS geocoding
+      run: npm run geocode:nys
+
+    - name: Generate PMTiles
+      run: npm run generate:pmtiles
+
+    - name: Update lineage documentation
+      run: |
+        echo "# Data Lineage" > data/LINEAGE.md
+        echo "" >> data/LINEAGE.md
+        echo "Last updated: $(date)" >> data/LINEAGE.md
+        echo "" >> data/LINEAGE.md
+        echo "## Sources" >> data/LINEAGE.md
+        echo "- PDF: Service Line Inventory for website_updated 4_29_25.pdf" >> data/LINEAGE.md
+        echo "- Geocoding: NYS GIS Address Points API with Census Bureau fallback" >> data/LINEAGE.md
+        echo "- Tiles: Generated with Tippecanoe" >> data/LINEAGE.md
+        echo "" >> data/LINEAGE.md
+        echo "## Processing Steps" >> data/LINEAGE.md
+        echo "1. PDF text extraction and parsing" >> data/LINEAGE.md
+        echo "2. Schema validation and auto-repair" >> data/LINEAGE.md
+        echo "3. Address geocoding with NYS GIS API" >> data/LINEAGE.md
+        echo "4. PMTiles generation for web serving" >> data/LINEAGE.md
+
+    - name: Commit pipeline results
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/ public/data/ public/tiles/ data/LINEAGE.md
+        if git diff --staged --quiet && [ "${{ inputs.force_update }}" != "true" ]; then
+          echo "No changes to commit"
+        else
+          git commit -m "Automated data pipeline update
+
+- PDF ingestion and schema validation
+- NYS GIS geocoding with fallbacks  
+- PMTiles generation for web serving
+- Lineage documentation updated"
+          git push https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
+        fi
