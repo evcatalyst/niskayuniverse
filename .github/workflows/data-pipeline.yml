@@ -8,7 +8,7 @@ on:
       force_update:
         description: 'Force update even if no changes'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
@@ -64,19 +64,24 @@ jobs:
         echo "3. Address geocoding with NYS GIS API" >> data/LINEAGE.md
         echo "4. PMTiles generation for web serving" >> data/LINEAGE.md
 
+    - name: Check for changes
+      id: check_changes
+      run: |
+        git diff --staged --quiet; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+
     - name: Commit pipeline results
+      if: always() && (steps.check_changes.outputs.changed == 'true' || inputs.force_update == true)
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add data/ public/data/ public/tiles/ data/LINEAGE.md
-        if git diff --staged --quiet && [ "${{ inputs.force_update }}" != "true" ]; then
-          echo "No changes to commit"
-        else
-          git commit -m "Automated data pipeline update
+        git commit -m "Automated data pipeline update
 
-- PDF ingestion and schema validation
-- NYS GIS geocoding with fallbacks  
-- PMTiles generation for web serving
-- Lineage documentation updated"
-          git push https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
-        fi
+        - PDF ingestion and schema validation
+        - NYS GIS geocoding with fallbacks  
+        - PMTiles generation for web serving
+        - Lineage documentation updated"
+        git push https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
