@@ -12,6 +12,7 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:accessibility": "pa11y-ci",
+    "verify": "bash scripts/verify-local.sh",
     "convert": "node scripts/convert-csv-to-json.js",
     "geocode": "node scripts/geocode-addresses.mjs",
     "geocode:ci": "node scripts/geocode-addresses-ci.mjs",
