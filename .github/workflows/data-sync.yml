@@ -1,8 +1,8 @@
 name: Data Sync
 
 on:
-  schedule:
-    - cron: '0 */1 * * *'  # Every hour
+  # schedule:
+  #   - cron: '0 */1 * * *'  # Every hour - DISABLED to prevent constant failures
   workflow_dispatch:
 
 permissions:
