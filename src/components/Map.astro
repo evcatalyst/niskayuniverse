@@ -1,0 +1,28 @@
+<div id="map" style="height:70vh;border-radius:8px;"></div>
+
+<script>
+  import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  const init = () => {
+    const map = L.map('map').setView([42.7851, -73.8949], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // Load prebuilt data
+    fetch(new URL('data/tests.json', document.baseURI)).then(r => r.json()).then(points => {
+      points.forEach(p => {
+        if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
+        L.circleMarker([p.latitude, p.longitude], {
+          radius: 6,
+          color: p.pH < 6.5 || p.pH > 8.5 ? '#e11' : '#2b8cbe',
+          weight: 1,
+          fillOpacity: 0.7
+        }).addTo(map).bindPopup(`${p.address || 'Unknown'}<br/>pH: ${p.pH ?? '—'}`);
+      });
+    }).catch(() => {});
+  };
+
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+</script>

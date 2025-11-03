@@ -1,0 +1,73 @@
+<form id="submit-form" style="display:none;max-width:400px;margin:20px auto;padding:20px;border:1px solid #ccc;border-radius:8px;">
+  <h3>Submit Water Quality Test</h3>
+
+  <label for="address">Address:</label>
+  <input type="text" id="address" required placeholder="123 Main St, Niskayuna, NY">
+
+  <label for="ph">pH (0-14):</label>
+  <input type="number" id="ph" step="0.1" min="0" max="14" placeholder="7.2">
+
+  <label for="tds">TDS (ppm):</label>
+  <input type="number" id="tds" min="0" placeholder="150">
+
+  <label for="temperature">Temperature (°F):</label>
+  <input type="number" id="temperature" step="0.1" placeholder="68">
+
+  <label for="lead">Lead (ppb, optional):</label>
+  <input type="number" id="lead" min="0" placeholder="2">
+
+  <label for="notes">Notes:</label>
+  <textarea id="notes" maxlength="500" placeholder="Test conditions, observations..."></textarea>
+
+  <button type="submit">Submit Test</button>
+</form>
+
+<script>
+  const form = document.getElementById('submit-form');
+  // Wait for auth to load
+  setTimeout(() => {
+    const user = window.getCurrentUser ? window.getCurrentUser() : null;
+    if (user) {
+      form.style.display = 'block';
+    }
+  }, 1000);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const user = window.getCurrentUser ? window.getCurrentUser() : null;
+    if (!user) {
+      alert('Please sign in first');
+      return;
+    }
+
+    const formData = new FormData(form);
+    const data = {
+      address: formData.get('address'),
+      pH: parseFloat(formData.get('ph')) || null,
+      tds: parseInt(formData.get('tds')) || null,
+      temperature: parseFloat(formData.get('temperature')) || null,
+      lead: parseInt(formData.get('lead')) || null,
+      notes: formData.get('notes'),
+      id_token: user.idToken
+    };
+
+    try {
+      const response = await fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert('Test submitted successfully!');
+        form.reset();
+      } else {
+        alert('Submission failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Network error. Please try again.');
+    }
+  });
+</script>
