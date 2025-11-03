@@ -24,12 +24,13 @@ jobs:
         run: npm ci
 
       - name: Build
+        id: build
         run: npm run build
+        continue-on-error: true
 
-      - name: Upload build artifacts
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-files
-          path: dist/
-          retention-days: 7
+      - name: Retry build with clean install
+        if: steps.build.outcome == 'failure'
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install
+          npm run build
