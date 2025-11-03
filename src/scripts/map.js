@@ -9,7 +9,7 @@ export function initMap() {
     }).addTo(map);
 
     // Load prebuilt data
-    fetch(new URL('../data/tests.json', document.baseURI)).then(r => r.json()).then(points => {
+    fetch('/niskayuniverse/data/tests.json').then(r => r.json()).then(points => {
       points.forEach(p => {
         if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
         addMarker(map, p);
