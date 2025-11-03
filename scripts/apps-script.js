@@ -30,14 +30,31 @@ function doGet() {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents || '{}');
-    const idToken = e.parameter.id_token || body.id_token || getAuthHeaderIdToken(e);
-    const claims = verifyIdToken(idToken);
-    const userEmail = claims.email;
-    rateLimit(userEmail);
+    
+    // Check if we have an id_token (OAuth flow) or direct email (manual entry)
+    let userEmail, userName = '';
+    
+    if (body.id_token) {
+      // OAuth flow - verify token
+      const claims = verifyIdToken(body.id_token);
+      userEmail = claims.email;
+      userName = claims.name || '';
+      rateLimit(userEmail);
+    } else if (body.email) {
+      // Manual email entry - basic validation
+      userEmail = String(body.email).trim().toLowerCase();
+      if (!userEmail.includes('@') || !userEmail.includes('.')) {
+        throw new Error('Invalid email format');
+      }
+      // For manual entry, use a simpler rate limit based on email
+      rateLimit(userEmail);
+    } else {
+      throw new Error('Either id_token or email is required');
+    }
 
     const r = validateAndCoerce(body);
     r.userEmail = userEmail;
-    r.userName = claims.name || '';
+    r.userName = userName;
     appendRow(r);
 
     return json({ ok: true });

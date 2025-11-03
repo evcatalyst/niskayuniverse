@@ -8,20 +8,16 @@ import SubmitForm from '../components/SubmitForm.astro';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Niskayuna Water Quality Atlas</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <header>
       <h1>Niskayuna Water Quality Atlas</h1>
       <p>Community-powered water monitoring</p>
-      <button id="signin-btn">Sign in with Google</button>
-      <div id="user-info" style="display:none;"></div>
     </header>
     <main>
       <Map />
       <SubmitForm />
     </main>
-    <script type="module" src="/niskayuniverse/sw-register.js"></script>
-    <script type="module" src="/niskayuniverse/auth.js"></script>
+    <script type="module" src="sw-register.js"></script>
   </body>
 </html>
