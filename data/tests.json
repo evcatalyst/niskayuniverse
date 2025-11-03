@@ -1,0 +1,32 @@
+[
+  {
+    "timestamp": "2025-11-02T10:30:00Z",
+    "userEmail": "sample@example.com",
+    "userName": "John Doe",
+    "latitude": 42.7851,
+    "longitude": -73.8949,
+    "address": "123 Main St, Niskayuna, NY",
+    "pH": 7.2,
+    "tds": 150,
+    "temperature": 68,
+    "lead": null,
+    "photoURLs": "",
+    "notes": "Kitchen tap test",
+    "verified": true
+  },
+  {
+    "timestamp": "2025-11-01T14:15:00Z",
+    "userEmail": "jane@example.com",
+    "userName": "Jane Smith",
+    "latitude": 42.7912,
+    "longitude": -73.9012,
+    "address": "456 Oak Ave, Niskayuna, NY",
+    "pH": 7.8,
+    "tds": 120,
+    "temperature": 72,
+    "lead": 2,
+    "photoURLs": "",
+    "notes": "Bathroom sink",
+    "verified": false
+  }
+]

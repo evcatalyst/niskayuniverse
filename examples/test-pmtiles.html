@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PMTiles Test</title>
+  <script src="https://unpkg.com/pmtiles@4.2.1/dist/pmtiles.js"></script>
+</head>
+<body>
+  <h1>PMTiles Test</h1>
+  <div id="output"></div>
+
+  <script>
+    const output = document.getElementById('output');
+
+    try {
+      const p = new pmtiles.PMTiles('tiles/service-lines.pmtiles');
+      output.innerHTML += '<p>PMTiles instance created</p>';
+
+      // Try to get header
+      p.getHeader().then(header => {
+        output.innerHTML += `<p>Header loaded: ${JSON.stringify(header)}</p>`;
+
+        // Try to get a tile URL
+        const tileUrl = p.getTileUrl(13, 2414, 3108);
+        output.innerHTML += `<p>Tile URL: ${tileUrl}</p>`;
+      }).catch(error => {
+        output.innerHTML += `<p>Error loading header: ${error.message}</p>`;
+      });
+    } catch (error) {
+      output.innerHTML += `<p>Error creating PMTiles: ${error.message}</p>`;
+    }
+  </script>
+</body>
+</html>

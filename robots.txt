@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://evcatalyst.github.io/service-line-markers/sitemap.xml

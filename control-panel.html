@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Line Marker Control Panel</title>
+  <style>
+    /* Embedded styles for control panel */
+    :root {
+      --lead: #D55E00;
+      --copper: #009E73;
+      --galvanized: #0072B2;
+      --plastic: #CC79A7;
+      --unknown-1: #bdbdbd;
+      --unknown-2: #eeeeee;
+      --verified: #56B4E9;
+    }
+
+    [data-palette="palette-dark2"] {
+      --lead: #d95f02;
+      --copper: #1b9e77;
+      --galvanized: #7570b3;
+      --plastic: #e7298a;
+      --unknown-1: #bdbdbd;
+      --unknown-2: #e5e5e5;
+      --verified: #66a61e;
+    }
+
+    [data-palette="palette-mono"] {
+      --lead: #333333;
+      --copper: #777777;
+      --galvanized: #999999;
+      --plastic: #bbbbbb;
+      --unknown-1: #bdbdbd;
+      --unknown-2: #e5e5e5;
+      --verified: #333333;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    select, input[type="number"], input[type="range"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 8px;
+    }
+
+    .preview {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+
+    .marker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .marker {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 1px solid #ddd;
+    }
+
+    .actions {
+      padding: 20px;
+      background: #f8f8f8;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-primary { background: #007bff; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-success { background: #28a745; color: white; }
+
+    .embed-notice {
+      background: #fff3cd;
+      color: #856404;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .embed-notice.show { display: block; }
+
+    /* Marker variants */
+    .marker.split { background: linear-gradient(to right, var(--lead) 50%, var(--copper) 50%); }
+    .marker.nested { background: var(--copper); position: relative; }
+    .marker.nested::before {
+      content: '';
+      position: absolute;
+      top: 25%;
+      left: 25%;
+      width: 50%;
+      height: 50%;
+      background: var(--lead);
+      border-radius: 50%;
+    }
+    .marker.donut { background: var(--copper); position: relative; }
+    .marker.donut::before {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 15%;
+      width: 70%;
+      height: 70%;
+      background: white;
+      border-radius: 50%;
+    }
+    .marker.hex { clip-path: polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%); background: linear-gradient(to right, var(--lead) 50%, var(--copper) 50%); }
+    .marker.halo { background: var(--copper); box-shadow: 0 0 8px var(--copper); position: relative; }
+    .marker.halo::before {
+      content: '';
+      position: absolute;
+      top: 30%;
+      left: 30%;
+      width: 40%;
+      height: 40%;
+      background: var(--lead);
+      border-radius: 50%;
+    }
+    .marker.band { border-radius: 20px; background: linear-gradient(to right, var(--lead) 50%, var(--copper) 50%); }
+    .marker.pin { border-radius: 50% 50% 50% 0; background: linear-gradient(to right, var(--lead) 50%, var(--copper) 50%); transform: rotate(-45deg); }
+
+    .pulse-lead { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .outline-unknown { border: 1px dashed var(--unknown-1); }
+    .outline-verified { border: 1px solid var(--verified); }
+    .unknown-pattern { background: repeating-linear-gradient(45deg, var(--unknown-1) 0 3px, var(--unknown-2) 3px 6px); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Service Line Marker Control Panel</h1>
+      <p>Configure and preview service-line marker styles</p>
+    </div>
+
+    <div class="embed-notice" id="embed-notice">
+      <strong>Embed Mode:</strong> Configuration changes are sent to parent window via postMessage.
+    </div>
+
+    <div class="controls">
+      <div class="form">
+        <div class="form-group">
+          <label for="palette">Palette</label>
+          <select id="palette">
+            <option value="palette-okabe">Okabe-Ito (Colorblind-safe)</option>
+            <option value="palette-dark2">ColorBrewer Dark2</option>
+            <option value="palette-mono">Monochrome + Patterns</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="tokenSize">Token Size: <span id="tokenSizeValue">24</span>px</label>
+          <input type="range" id="tokenSize" min="12" max="40" value="24">
+        </div>
+
+        <div class="form-group">
+          <label for="ringInset">Ring Inset: <span id="ringInsetValue">34</span>%</label>
+          <input type="range" id="ringInset" min="22" max="42" value="34">
+        </div>
+
+        <div class="form-group">
+          <label for="style">Style</label>
+          <select id="style">
+            <option value="split">Split</option>
+            <option value="nested">Nested</option>
+            <option value="donut">Donut</option>
+            <option value="hex">Hex</option>
+            <option value="halo">Halo</option>
+            <option value="band">Band</option>
+            <option value="pin">Pin</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="patterns" checked> Unknown Patterns</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="pulseLead" checked> Pulse Lead</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="dashedUnknown" checked> Dashed Unknown</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="verifiedOutline"> Verified Outline</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="animation" checked> Animation</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="showLegend" checked> Show Legend</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" id="cluster"> Clustering</label>
+        </div>
+
+        <div class="form-group" id="clusterMinPtsGroup" style="display: none;">
+          <label for="clusterMinPts">Cluster Min Points: <span id="clusterMinPtsValue">3</span></label>
+          <input type="range" id="clusterMinPts" min="2" max="10" value="3">
+        </div>
+
+        <h3>Level of Detail</h3>
+
+        <div class="form-group">
+          <label for="lodCityMax">City Max Zoom: <span id="lodCityMaxValue">12</span></label>
+          <input type="range" id="lodCityMax" min="10" max="14" value="12">
+        </div>
+
+        <div class="form-group">
+          <label for="lodNhoodMax">Neighborhood Max Zoom: <span id="lodNhoodMaxValue">15</span></label>
+          <input type="range" id="lodNhoodMax" min="14" max="16" value="15">
+        </div>
+
+        <div class="form-group">
+          <label for="lodCityStyle">City Style</label>
+          <select id="lodCityStyle">
+            <option value="halo">Halo</option>
+            <option value="nested">Nested</option>
+            <option value="split">Split</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="lodNhoodStyle">Neighborhood Style</label>
+          <select id="lodNhoodStyle">
+            <option value="nested">Nested</option>
+            <option value="halo">Halo</option>
+            <option value="split">Split</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="lodParcelStyle">Parcel Style</label>
+          <select id="lodParcelStyle">
+            <option value="split">Split</option>
+            <option value="nested">Nested</option>
+            <option value="halo">Halo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tooltip Fields</label>
+          <div>
+            <label><input type="checkbox" name="tooltipFields" value="address" checked> Address</label>
+            <label><input type="checkbox" name="tooltipFields" value="private_type" checked> Private Type</label>
+            <label><input type="checkbox" name="tooltipFields" value="public_type" checked> Public Type</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview">
+        <h3>Preview</h3>
+        <p>Markers with different material combinations:</p>
+        <div class="marker-grid" id="markerGrid"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="exportJson">Export JSON</button>
+      <button class="btn-secondary" id="downloadJson">Download JSON</button>
+      <button class="btn-secondary" id="importJson">Import JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
+      <button class="btn-success" id="copyViewerLink">Copy Viewer Link</button>
+      <button class="btn-success" id="copyEmbedLink">Copy Embed Link</button>
+    </div>
+  </div>
+
+  <script>
+    // Control Panel Logic
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode') || 'editor';
+    const cfgParam = urlParams.get('cfg');
+
+    if (mode === 'embed') {
+      document.getElementById('embed-notice').classList.add('show');
+    }
+
+    if (mode === 'viewer') {
+      document.querySelector('.form').style.display = 'none';
+      document.querySelector('.actions').style.display = 'none';
+    }
+
+    // Default config
+    let config = {
+      palette: 'palette-okabe',
+      tokenSize: 24,
+      ringInset: 34,
+      style: 'split',
+      patterns: true,
+      pulseLead: true,
+      dashedUnknown: true,
+      verifiedOutline: false,
+      animation: true,
+      showLegend: true,
+      cluster: false,
+      clusterMinPts: 3,
+      lodCityMax: 12,
+      lodNhoodMax: 15,
+      lodCityStyle: 'halo',
+      lodNhoodStyle: 'nested',
+      lodParcelStyle: 'split',
+      tooltipFields: ['address', 'private_type', 'public_type']
+    };
+
+    if (cfgParam) {
+      try {
+        const decoded = decodeURIComponent(cfgParam);
+        const parsed = JSON.parse(atob(decoded));
+        config = { ...config, ...parsed };
+      } catch (e) {
+        console.warn('Invalid config in URL');
+      }
+    }
+
+    // Load config into UI
+    function loadConfig() {
+      Object.keys(config).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) {
+          if (el.type === 'checkbox') {
+            el.checked = config[key];
+          } else {
+            el.value = config[key];
+          }
+        }
+      });
+
+      // Special handling
+      document.getElementById('tokenSizeValue').textContent = config.tokenSize;
+      document.getElementById('ringInsetValue').textContent = config.ringInset;
+      document.getElementById('clusterMinPtsValue').textContent = config.clusterMinPts;
+      document.getElementById('lodCityMaxValue').textContent = config.lodCityMax;
+      document.getElementById('lodNhoodMaxValue').textContent = config.lodNhoodMax;
+
+      document.querySelectorAll('input[name="tooltipFields"]').forEach(cb => {
+        cb.checked = config.tooltipFields.includes(cb.value);
+      });
+
+      updatePalette();
+      updatePreview();
+      updateClusterVisibility();
+    }
+
+    // Update functions
+    function updatePalette() {
+      document.documentElement.setAttribute('data-palette', config.palette);
+    }
+
+    function updatePreview() {
+      const grid = document.getElementById('markerGrid');
+      grid.innerHTML = '';
+
+      const examples = [
+        { private_type: 'lead', public_type: 'copper', verified: true },
+        { private_type: 'copper', public_type: 'plastic', verified: false },
+        { private_type: 'unknown', public_type: 'galvanized', verified: true },
+        { private_type: 'plastic', public_type: 'unknown', verified: false },
+        { private_type: 'lead', public_type: 'unknown', verified: true },
+        { private_type: 'unknown', public_type: 'unknown', verified: false }
+      ];
+
+      examples.forEach(example => {
+        const marker = createMarker(example);
+        grid.appendChild(marker);
+      });
+    }
+
+    function createMarker(feature) {
+      const div = document.createElement('div');
+      div.className = 'marker ' + config.style;
+      div.style.width = config.tokenSize + 'px';
+      div.style.height = config.tokenSize + 'px';
+      div.style.setProperty('--private-color', getColor(feature.private_type));
+      div.style.setProperty('--public-color', getColor(feature.public_type));
+
+      if (config.pulseLead && (feature.private_type === 'lead' || feature.public_type === 'lead') && config.animation) {
+        div.classList.add('pulse-lead');
+      }
+      if (config.dashedUnknown && (feature.private_type === 'unknown' || feature.public_type === 'unknown')) {
+        div.classList.add('outline-unknown');
+      }
+      if (config.verifiedOutline && feature.verified) {
+        div.classList.add('outline-verified');
+      }
+      if (config.patterns && (feature.private_type === 'unknown' || feature.public_type === 'unknown')) {
+        div.classList.add('unknown-pattern');
+      }
+
+      return div;
+    }
+
+    function getColor(material) {
+      switch (material) {
+        case 'lead': return 'var(--lead)';
+        case 'copper': return 'var(--copper)';
+        case 'galvanized': return 'var(--galvanized)';
+        case 'plastic': return 'var(--plastic)';
+        default: return 'var(--unknown-1)';
+      }
+    }
+
+    function updateClusterVisibility() {
+      document.getElementById('clusterMinPtsGroup').style.display = config.cluster ? 'block' : 'none';
+    }
+
+    // Event listeners
+    document.getElementById('palette').addEventListener('change', e => {
+      config.palette = e.target.value;
+      updatePalette();
+      updatePreview();
+      notifyChange();
+    });
+
+    document.getElementById('tokenSize').addEventListener('input', e => {
+      config.tokenSize = parseInt(e.target.value);
+      document.getElementById('tokenSizeValue').textContent = config.tokenSize;
+      updatePreview();
+      notifyChange();
+    });
+
+    document.getElementById('ringInset').addEventListener('input', e => {
+      config.ringInset = parseInt(e.target.value);
+      document.getElementById('ringInsetValue').textContent = config.ringInset;
+      updatePreview();
+      notifyChange();
+    });
+
+    document.getElementById('style').addEventListener('change', e => {
+      config.style = e.target.value;
+      updatePreview();
+      notifyChange();
+    });
+
+    ['patterns', 'pulseLead', 'dashedUnknown', 'verifiedOutline', 'animation', 'showLegend', 'cluster'].forEach(id => {
+      document.getElementById(id).addEventListener('change', e => {
+        config[id] = e.target.checked;
+        if (id === 'cluster') updateClusterVisibility();
+        updatePreview();
+        notifyChange();
+      });
+    });
+
+    document.getElementById('clusterMinPts').addEventListener('input', e => {
+      config.clusterMinPts = parseInt(e.target.value);
+      document.getElementById('clusterMinPtsValue').textContent = config.clusterMinPts;
+      notifyChange();
+    });
+
+    ['lodCityMax', 'lodNhoodMax'].forEach(id => {
+      document.getElementById(id).addEventListener('input', e => {
+        config[id] = parseInt(e.target.value);
+        document.getElementById(id + 'Value').textContent = config[id];
+        notifyChange();
+      });
+    });
+
+    ['lodCityStyle', 'lodNhoodStyle', 'lodParcelStyle'].forEach(id => {
+      document.getElementById(id).addEventListener('change', e => {
+        config[id] = e.target.value;
+        notifyChange();
+      });
+    });
+
+    document.querySelectorAll('input[name="tooltipFields"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        config.tooltipFields = Array.from(document.querySelectorAll('input[name="tooltipFields"]:checked')).map(cb => cb.value);
+        notifyChange();
+      });
+    });
+
+    // Actions
+    document.getElementById('exportJson').addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+      alert('Configuration copied to clipboard!');
+    });
+
+    document.getElementById('downloadJson').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'service-marker-config.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('importJson').addEventListener('click', () => {
+      document.getElementById('importFile').click();
+    });
+
+    document.getElementById('importFile').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const imported = JSON.parse(reader.result);
+            config = { ...config, ...imported };
+            loadConfig();
+            notifyChange();
+          } catch (err) {
+            alert('Invalid JSON file');
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    document.getElementById('copyViewerLink').addEventListener('click', () => {
+      const encoded = btoa(JSON.stringify(config));
+      const url = `${window.location.origin}${window.location.pathname}?mode=viewer&cfg=${encodeURIComponent(encoded)}`;
+      navigator.clipboard.writeText(url);
+      alert('Viewer link copied to clipboard!');
+    });
+
+    document.getElementById('copyEmbedLink').addEventListener('click', () => {
+      const encoded = btoa(JSON.stringify(config));
+      const url = `${window.location.origin}${window.location.pathname}?mode=embed&cfg=${encodeURIComponent(encoded)}`;
+      navigator.clipboard.writeText(url);
+      alert('Embed link copied to clipboard!');
+    });
+
+    function notifyChange() {
+      if (mode === 'embed') {
+        window.parent.postMessage({
+          type: 'service-marker-config',
+          config: config
+        }, '*');
+      }
+    }
+
+    // Initialize
+    loadConfig();
+  </script>
+</body>
+</html>
