@@ -144,7 +144,7 @@ export function initForm() {
       const isLocalhost = window.location.hostname === 'localhost';
       const submitUrl = isLocalhost
         ? 'http://localhost:3000/submit' // Local development endpoint
-        : 'https://script.google.com/macros/s/AKfycbyBZ0cIYn8LhD97R2xw7YEqcsbVy6Bx4XAUGUCaGpyR6W7pQza89Sa-egAlIuwAPgbkxA/exec';
+        : 'https://script.google.com/macros/s/AKfycbwDYRVmH9CeWe9Q1vZg5tR4tAHai5bVIr_-2Py0EziIQb4ALPCFt_Ul_m8850xQJCJhEA/exec';
 
       const response = await fetch(submitUrl, {
         method: 'POST',
