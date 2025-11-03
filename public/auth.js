@@ -2,8 +2,13 @@
 let currentUser = null;
 
 function initGoogleAuth() {
+  if (!google || !google.accounts || !google.accounts.id) {
+    console.error('Google Identity Services not loaded');
+    return;
+  }
+
   google.accounts.id.initialize({
-    client_id: 'YOUR_GOOGLE_CLIENT_ID', // Replace with actual client ID
+    client_id: '1009872626389-rbgkpr4mtl2i2varf8fso2ji2f17m85a.apps.googleusercontent.com', // Replace with actual client ID
     callback: handleCredentialResponse
   });
 
@@ -48,8 +53,17 @@ function getCurrentUser() {
 // Make it global
 window.getCurrentUser = getCurrentUser;
 
-// Load Google Identity Services script
-const script = document.createElement('script');
-script.src = 'https://accounts.google.com/gsi/client';
-script.onload = initGoogleAuth;
-document.head.appendChild(script);
+// Initialize when DOM is ready and Google script is loaded
+function checkGoogleAndInit() {
+  if (window.google && window.google.accounts && window.google.accounts.id) {
+    initGoogleAuth();
+  } else {
+    setTimeout(checkGoogleAndInit, 100);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkGoogleAndInit);
+} else {
+  checkGoogleAndInit();
+}

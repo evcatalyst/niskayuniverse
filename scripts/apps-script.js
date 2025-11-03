@@ -1,7 +1,31 @@
 // Google Apps Script for handling submissions
 // Deploy as Web App: Execute as me, Access: Anyone
 
-const SHEET_ID = 'YOUR_SHEET_ID'; // Replace with actual Google Sheet ID
+const SHEET_ID = '1hrf9LBCEXEQ97ZTXE3IXz9gp99cDE8x_E9mcVYYNDv4'; // Replace with actual Google Sheet ID
+
+function doGet() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sh = ss.getSheetByName('WaterQualityTests');
+    if (!sh) throw new Error('Missing sheet "WaterQualityTests"');
+    
+    const data = sh.getDataRange().getValues();
+    if (data.length < 2) return json([]); // No data rows
+    
+    const headers = data[0];
+    const rows = data.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((header, i) => {
+        obj[header.toLowerCase()] = row[i];
+      });
+      return obj;
+    });
+    
+    return json(rows);
+  } catch (err) {
+    return json({ error: String(err) });
+  }
+}
 
 function doPost(e) {
   try {
