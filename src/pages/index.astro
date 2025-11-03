@@ -1,0 +1,23 @@
+---
+import Map from '../components/Map.astro';
+import SubmitForm from '../components/SubmitForm.astro';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Niskayuna Water Quality Atlas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Niskayuna Water Quality Atlas</h1>
+      <p>Community-powered water monitoring</p>
+    </header>
+    <main>
+      <Map />
+      <SubmitForm />
+    </main>
+    <script type="module" src="sw-register.js"></script>
+  </body>
+</html>

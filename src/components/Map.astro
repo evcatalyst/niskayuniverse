@@ -1,0 +1,82 @@
+<div id="map" style="height:70vh;border-radius:8px;"></div>
+
+<script>
+  import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  const init = () => {
+    const map = L.map('map').setView([42.7851, -73.8949], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // Load prebuilt data
+    fetch(new URL('data/tests.json', document.baseURI)).then(r => r.json()).then(points => {
+      points.forEach(p => {
+        if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
+        addMarker(map, p);
+      });
+    }).catch(() => {});
+
+    // Poll for new submissions every 30 seconds
+    const isLocalhost = window.location.hostname === 'localhost';
+    if (!isLocalhost) {
+      setInterval(async () => {
+        try {
+          const response = await fetch('https://script.google.com/macros/s/AKfycbyBZ0cIYn8LhD97R2xw7YEqcsbVy6Bx4XAUGUCaGpyR6W7pQza89Sa-egAlIuwAPgbkxA/exec?' + Date.now());
+          const newData = await response.json();
+          
+          if (Array.isArray(newData)) {
+            // Clear existing markers and re-add all
+            map.eachLayer((layer) => {
+              if (layer instanceof L.CircleMarker) {
+                map.removeLayer(layer);
+              }
+            });
+            
+            newData.forEach(p => {
+              if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
+              addMarker(map, p);
+            });
+          }
+        } catch (e) {
+          console.log('Polling failed:', e);
+        }
+      }, 30000); // Poll every 30 seconds
+    }
+
+    // Make addMarker function globally available
+    window.addMarkerToMap = (data) => addMarker(map, data);
+  };
+
+  function addMarker(map, p) {
+    let color;
+    if (p.pH < 6.5) {
+      color = '#e11'; // Red for acidic
+    } else if (p.pH > 8.5) {
+      color = '#2b8cbe'; // Blue for alkaline
+    } else {
+      color = '#2ecc71'; // Green for neutral/acceptable
+    }
+
+    const marker = L.circleMarker([p.latitude, p.longitude], {
+      radius: 6,
+      color: color,
+      weight: 1,
+      fillOpacity: 0.7
+    }).addTo(map);
+
+    const popupContent = `
+      <strong>${p.address || 'Unknown Location'}</strong><br/>
+      pH: ${p.pH ?? '—'}<br/>
+      TDS: ${p.tds ?? '—'} ppm<br/>
+      Temp: ${p.temperature ?? '—'} °F<br/>
+      Lead: ${p.lead ?? '—'} ppb<br/>
+      ${p.notes ? `<em>${p.notes}</em><br/>` : ''}
+      <small>Submitted by: ${p.userName || 'Anonymous'}</small>
+    `;
+    marker.bindPopup(popupContent);
+  }
+
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+</script>
