@@ -1,51 +1,65 @@
 // Map initialization and functionality
 export function initMap() {
-  // Import Leaflet dynamically
-  import('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js').then(() => {
-    const map = L.map('map').setView([42.7851, -73.8949], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+  try {
+    // Import Leaflet dynamically
+    import('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js').then(() => {
+      try {
+        const map = L.map('map').setView([42.7851, -73.8949], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
 
-    // Load prebuilt data
-    fetch('/niskayuniverse/data/tests.json').then(r => r.json()).then(points => {
-      points.forEach(p => {
-        if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
-        addMarker(map, p);
-      });
-    }).catch(() => {});
+        // Load prebuilt data
+        fetch('/niskayuniverse/data/tests.json').then(r => r.json()).then(points => {
+          points.forEach(p => {
+            if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
+            addMarker(map, p);
+          });
+        }).catch((error) => {
+          console.log('Failed to load sample data:', error);
+        });
 
-    // Poll for new submissions every 30 seconds
-    const isLocalhost = window.location.hostname === 'localhost';
-    if (!isLocalhost) {
-      setInterval(async () => {
-        try {
-          const response = await fetch('https://script.google.com/macros/s/AKfycbwDYRVmH9CeWe9Q1vZg5tR4tAHai5bVIr_-2Py0EziIQb4ALPCFt_Ul_m8850xQJCJhEA/exec?' + Date.now());
-          const newData = await response.json();
+        // Poll for new submissions every 30 seconds
+        const isLocalhost = window.location.hostname === 'localhost';
+        if (!isLocalhost) {
+          setInterval(async () => {
+            try {
+              const response = await fetch('https://script.google.com/macros/s/AKfycbwDYRVmH9CeWe9Q1vZg5tR4tAHai5bVIr_-2Py0EziIQb4ALPCFt_Ul_m8850xQJCJhEA/exec?' + Date.now());
+              const newData = await response.json();
 
-          if (Array.isArray(newData)) {
-            // Clear existing markers and re-add all
-            map.eachLayer((layer) => {
-              if (layer instanceof L.CircleMarker) {
-                map.removeLayer(layer);
+              if (Array.isArray(newData)) {
+                // Clear existing markers and re-add all
+                map.eachLayer((layer) => {
+                  if (layer instanceof L.CircleMarker) {
+                    map.removeLayer(layer);
+                  }
+                });
+
+                newData.forEach(p => {
+                  if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
+                  addMarker(map, p);
+                });
               }
-            });
-
-            newData.forEach(p => {
-              if (!isFinite(p.latitude) || !isFinite(p.longitude)) return;
-              addMarker(map, p);
-            });
-          }
-        } catch (e) {
-          console.log('Polling failed:', e);
+            } catch (e) {
+              console.log('Polling failed:', e);
+            }
+          }, 30000); // Poll every 30 seconds
         }
-      }, 30000); // Poll every 30 seconds
-    }
 
-    // Make addMarker function globally available
-    window.addMarkerToMap = (data) => addMarker(map, data);
-  });
+        // Make addMarker function globally available
+        window.addMarkerToMap = (data) => addMarker(map, data);
+      } catch (error) {
+        console.error('Map initialization failed:', error);
+        document.getElementById('map').innerHTML = '<p style="padding: 20px; text-align: center; color: red;">Map failed to load. Please refresh the page.</p>';
+      }
+    }).catch((error) => {
+      console.error('Leaflet failed to load:', error);
+      document.getElementById('map').innerHTML = '<p style="padding: 20px; text-align: center; color: red;">Map library failed to load. Please refresh the page.</p>';
+    });
+  } catch (error) {
+    console.error('Map initMap function failed:', error);
+  }
 }
 
 // Add marker to map with pH-based color coding

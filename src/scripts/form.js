@@ -1,180 +1,126 @@
 // Form initialization and functionality
 export function initForm() {
-  // Show form
-  const form = document.getElementById('submit-form');
-  form.style.display = 'block';
-
-  // Address autocomplete functionality
-  const addressInput = document.getElementById('address');
-  const suggestionsDiv = document.getElementById('address-suggestions');
-  let debounceTimer;
-  let selectedSuggestion = -1;
-
-  // Debounced search function
-  function debounceSearch(query) {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => searchAddresses(query), 300);
-  }
-
-  // Search addresses using Nominatim
-  async function searchAddresses(query) {
-    if (query.length < 3) {
-      suggestionsDiv.style.display = 'none';
+  try {
+    const form = document.getElementById('submit-form');
+    if (!form) {
+      console.error('Form element not found');
       return;
     }
 
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Niskayuna, NY')}&limit=5&countrycodes=us`);
-      const data = await response.json();
+    const addressInput = document.getElementById('address');
+    const emailInput = document.getElementById('email');
+    const phInput = document.getElementById('ph');
+    const submitBtn = document.getElementById('submit-btn');
 
-      suggestionsDiv.innerHTML = '';
-      if (data.length > 0) {
-        data.forEach((item, index) => {
-          const div = document.createElement('div');
-          div.textContent = item.display_name;
-          div.style.padding = '8px';
-          div.style.cursor = 'pointer';
-          div.style.borderBottom = '1px solid #eee';
-          div.onmouseover = () => {
-            div.style.backgroundColor = '#f0f0f0';
-            selectedSuggestion = index;
-          };
-          div.onmouseout = () => {
-            div.style.backgroundColor = 'white';
-          };
-          div.onclick = () => {
-            addressInput.value = item.display_name;
-            suggestionsDiv.style.display = 'none';
-            // Store coordinates for submission
-            addressInput.dataset.lat = item.lat;
-            addressInput.dataset.lon = item.lon;
-          };
-          suggestionsDiv.appendChild(div);
+    if (!addressInput || !emailInput || !phInput || !submitBtn) {
+      console.error('Required form elements not found');
+      return;
+    }
+
+    // Address autocomplete
+    addressInput.addEventListener('input', async (e) => {
+      try {
+        const query = e.target.value;
+        if (query.length < 3) return;
+
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=us`);
+        const results = await response.json();
+
+        // Remove existing suggestions
+        const existingSuggestions = document.querySelector('.address-suggestions');
+        if (existingSuggestions) existingSuggestions.remove();
+
+        if (results.length > 0) {
+          const suggestions = document.createElement('div');
+          suggestions.className = 'address-suggestions';
+          suggestions.style.cssText = 'position: absolute; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; z-index: 1000; width: 100%;';
+
+          results.forEach(result => {
+            const suggestion = document.createElement('div');
+            suggestion.textContent = result.display_name;
+            suggestion.style.cssText = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
+            suggestion.addEventListener('click', () => {
+              addressInput.value = result.display_name;
+              suggestions.remove();
+            });
+            suggestions.appendChild(suggestion);
+          });
+
+          addressInput.parentNode.style.position = 'relative';
+          addressInput.parentNode.appendChild(suggestions);
+        }
+      } catch (error) {
+        console.log('Address autocomplete failed:', error);
+      }
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+      const address = addressInput.value.trim();
+      const ph = parseFloat(phInput.value);
+
+      if (!email || !address || isNaN(ph)) {
+        alert('Please fill in all fields correctly.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        // Geocode the address
+        const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+        const geocodeResults = await geocodeResponse.json();
+
+        if (geocodeResults.length === 0) {
+          alert('Could not find coordinates for this address. Please try a different address.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Test';
+          return;
+        }
+
+        const lat = parseFloat(geocodeResults[0].lat);
+        const lon = parseFloat(geocodeResults[0].lon);
+
+        // Submit to Google Apps Script
+        const submitResponse = await fetch('https://script.google.com/macros/s/AKfycbwDYRVmH9CeWe9Q1vZg5tR4tAHai5bVIr_-2Py0EziIQb4ALPCFt_Ul_m8850xQJCJhEA/exec', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            latitude: lat,
+            longitude: lon,
+            ph: ph,
+            timestamp: new Date().toISOString()
+          })
         });
-        suggestionsDiv.style.display = 'block';
-      } else {
-        suggestionsDiv.style.display = 'none';
-      }
-    } catch (error) {
-      console.error('Address search error:', error);
-      suggestionsDiv.style.display = 'none';
-    }
-  }
 
-  // Address input event listeners
-  addressInput.addEventListener('input', (e) => {
-    debounceSearch(e.target.value);
-  });
+        const result = await submitResponse.json();
 
-  addressInput.addEventListener('keydown', (e) => {
-    const items = suggestionsDiv.children;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      selectedSuggestion = Math.min(selectedSuggestion + 1, items.length - 1);
-      updateSelection();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      selectedSuggestion = Math.max(selectedSuggestion - 1, -1);
-      updateSelection();
-    } else if (e.key === 'Enter' && selectedSuggestion >= 0) {
-      e.preventDefault();
-      items[selectedSuggestion].click();
-    } else if (e.key === 'Escape') {
-      suggestionsDiv.style.display = 'none';
-      selectedSuggestion = -1;
-    }
-  });
-
-  function updateSelection() {
-    const items = suggestionsDiv.children;
-    for (let i = 0; i < items.length; i++) {
-      items[i].style.backgroundColor = i === selectedSuggestion ? '#e0e0e0' : 'white';
-    }
-  }
-
-  // Hide suggestions when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!addressInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
-      suggestionsDiv.style.display = 'none';
-      selectedSuggestion = -1;
-    }
-  });
-
-  // Form submission
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Submitting...';
-    submitBtn.disabled = true;
-
-    try {
-      // Get coordinates from address input or geocode if needed
-      let latitude, longitude;
-      if (addressInput.dataset.lat && addressInput.dataset.lon) {
-        latitude = parseFloat(addressInput.dataset.lat);
-        longitude = parseFloat(addressInput.dataset.lon);
-      } else {
-        // Fallback geocoding
-        const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressInput.value)}&limit=1`);
-        const geocodeData = await geocodeResponse.json();
-        if (geocodeData.length > 0) {
-          latitude = parseFloat(geocodeData[0].lat);
-          longitude = parseFloat(geocodeData[0].lon);
+        if (result.success) {
+          alert('Test submitted successfully! It will appear on the map shortly.');
+          form.reset();
+          // Add marker immediately to map
+          if (window.addMarkerToMap) {
+            window.addMarkerToMap({ latitude: lat, longitude: lon, ph: ph, email: email });
+          }
         } else {
-          throw new Error('Could not geocode address');
+          alert('Submission failed: ' + (result.error || 'Unknown error'));
         }
+      } catch (error) {
+        console.error('Submission error:', error);
+        alert('Submission failed. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Test';
       }
-
-      const formData = new FormData(form);
-      const data = {
-        email: formData.get('email'),
-        address: formData.get('address'),
-        latitude,
-        longitude,
-        pH: formData.get('ph') || '',
-        tds: formData.get('tds') || '',
-        temperature: formData.get('temperature') || '',
-        lead: formData.get('lead') || '',
-        notes: formData.get('notes') || ''
-      };
-
-      // Submit to Google Apps Script
-      const isLocalhost = window.location.hostname === 'localhost';
-      const submitUrl = isLocalhost
-        ? 'http://localhost:3000/submit' // Local development endpoint
-        : 'https://script.google.com/macros/s/AKfycbwDYRVmH9CeWe9Q1vZg5tR4tAHai5bVIr_-2Py0EziIQb4ALPCFt_Ul_m8850xQJCJhEA/exec';
-
-      const response = await fetch(submitUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (result.ok) {
-        alert('Test submitted successfully!');
-        form.reset();
-        // Clear stored coordinates
-        delete addressInput.dataset.lat;
-        delete addressInput.dataset.lon;
-        // Add marker to map if function exists
-        if (window.addMarkerToMap) {
-          window.addMarkerToMap(data);
-        }
-      } else {
-        throw new Error(result.error || 'Submission failed');
-      }
-    } catch (error) {
-      console.error('Submission error:', error);
-      alert('Error submitting test: ' + error.message);
-    } finally {
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Form initialization failed:', error);
+  }
 }
