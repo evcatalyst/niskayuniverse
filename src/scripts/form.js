@@ -93,21 +93,26 @@ export function initForm() {
           },
           body: JSON.stringify({
             email: email,
+            address: address,
             latitude: lat,
             longitude: lon,
-            ph: ph,
+            pH: ph,
+            tds: parseFloat(document.getElementById('tds').value) || '',
+            temperature: parseFloat(document.getElementById('temperature').value) || '',
+            lead: parseFloat(document.getElementById('lead').value) || '',
+            notes: document.getElementById('notes').value || '',
             timestamp: new Date().toISOString()
           })
         });
 
         const result = await submitResponse.json();
 
-        if (result.success) {
+        if (result.ok) {
           alert('Test submitted successfully! It will appear on the map shortly.');
           form.reset();
           // Add marker immediately to map
           if (window.addMarkerToMap) {
-            window.addMarkerToMap({ latitude: lat, longitude: lon, ph: ph, email: email });
+            window.addMarkerToMap({ latitude: lat, longitude: lon, pH: ph, email: email });
           }
         } else {
           alert('Submission failed: ' + (result.error || 'Unknown error'));
