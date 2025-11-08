@@ -20,15 +20,6 @@ import SubmitForm from '../components/SubmitForm.astro';
       <SubmitForm />
     </main>
     <script type="module" src="sw-register.js"></script>
-    <script>
-      import { initMap } from '../scripts/map.js';
-      import { initForm } from '../scripts/form.js';
-      
-      // Wait for the DOM to be fully loaded before initializing
-      document.addEventListener('DOMContentLoaded', () => {
-        initMap();
-        initForm();
-      });
-    </script>
+    <script is:inline src="../scripts/main.js"></script>
   </body>
 </html>
