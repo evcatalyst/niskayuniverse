@@ -1,5 +1,14 @@
 // Map initialization and functionality
 export function initMap() {
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMapInternal);
+  } else {
+    initMapInternal();
+  }
+}
+
+function initMapInternal() {
   try {
     // Import Leaflet dynamically
     import('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js').then(() => {

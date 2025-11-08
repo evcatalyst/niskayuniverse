@@ -1,5 +1,14 @@
 // Form initialization and functionality
 export function initForm() {
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFormInternal);
+  } else {
+    initFormInternal();
+  }
+}
+
+function initFormInternal() {
   try {
     const form = document.getElementById('submit-form');
     if (!form) {
