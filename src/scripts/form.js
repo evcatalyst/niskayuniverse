@@ -1,9 +1,5 @@
 // Form initialization and functionality
 export function initForm() {
-  initFormInternal();
-}
-
-function initFormInternal() {
   try {
     const form = document.getElementById('submit-form');
     if (!form) {
