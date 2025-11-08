@@ -23,8 +23,12 @@ import SubmitForm from '../components/SubmitForm.astro';
     <script>
       import { initMap } from '../scripts/map.js';
       import { initForm } from '../scripts/form.js';
-      initMap();
-      initForm();
+      
+      // Wait for the DOM to be fully loaded before initializing
+      document.addEventListener('DOMContentLoaded', () => {
+        initMap();
+        initForm();
+      });
     </script>
   </body>
 </html>

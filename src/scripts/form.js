@@ -1,14 +1,6 @@
 // Form initialization and functionality
 export function initForm() {
-  // Always wait for DOM to be fully loaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initFormInternal);
-  } else if (document.readyState === 'interactive' || document.readyState === 'complete') {
-    // DOM is ready, but let's add a small delay to ensure everything is rendered
-    setTimeout(initFormInternal, 0);
-  } else {
-    document.addEventListener('DOMContentLoaded', initFormInternal);
-  }
+  initFormInternal();
 }
 
 function initFormInternal() {

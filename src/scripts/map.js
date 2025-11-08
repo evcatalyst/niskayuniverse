@@ -1,14 +1,6 @@
 // Map initialization and functionality
 export function initMap() {
-  // Always wait for DOM to be fully loaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMapInternal);
-  } else if (document.readyState === 'interactive' || document.readyState === 'complete') {
-    // DOM is ready, but let's add a small delay to ensure everything is rendered
-    setTimeout(initMapInternal, 0);
-  } else {
-    document.addEventListener('DOMContentLoaded', initMapInternal);
-  }
+  initMapInternal();
 }
 
 function initMapInternal() {
