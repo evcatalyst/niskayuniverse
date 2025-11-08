@@ -16,8 +16,8 @@ import SubmitForm from '../components/SubmitForm.astro';
       <p>Community-powered water monitoring</p>
     </header>
     <main>
-      <Map />
-      <SubmitForm />
+      <Map client:load />
+      <SubmitForm client:load />
     </main>
     <script type="module" src="sw-register.js"></script>
   </body>
