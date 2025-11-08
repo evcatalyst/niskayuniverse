@@ -86,7 +86,7 @@ export function initForm() {
         const lon = parseFloat(geocodeResults[0].lon);
 
         // Submit to Google Apps Script
-        const submitResponse = await fetch('https://script.google.com/macros/s/AKfycbx1BNRlkoFzovQmadTATeU2nFbNPTe-HoR3uXYWnPuHmTlkK6cCFkNLN9KO0sV5XBX_yA/exec', {
+        const submitResponse = await fetch('https://script.google.com/macros/s/AKfycbyTuL-uqaZnb4z9SjPBDi5yjSFvj7kc5ymTKa7zNkLNDAWeNaWHFevLt4VR606qs5G4/exec', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

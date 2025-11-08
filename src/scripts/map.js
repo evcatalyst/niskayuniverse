@@ -25,7 +25,7 @@ export function initMap() {
         if (!isLocalhost) {
           setInterval(async () => {
             try {
-              const response = await fetch('https://script.google.com/macros/s/AKfycbx1BNRlkoFzovQmadTATeU2nFbNPTe-HoR3uXYWnPuHmTlkK6cCFkNLN9KO0sV5XBX_yA/exec?' + Date.now());
+              const response = await fetch('https://script.google.com/macros/s/AKfycbyTuL-uqaZnb4z9SjPBDi5yjSFvj7kc5ymTKa7zNkLNDAWeNaWHFevLt4VR606qs5G4/exec?' + Date.now());
               const newData = await response.json();
 
               if (Array.isArray(newData)) {
