@@ -35,8 +35,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # Disable npm caching to avoid optional dependency issues
-          cache: false
+          # No caching to avoid optional dependency issues
       - name: Install dependencies
         run: |
           npm ci
