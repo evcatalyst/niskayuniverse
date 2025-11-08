@@ -36,19 +36,31 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Clear npm cache
+        run: npm cache clean --force
       - name: Install dependencies
         run: |
           npm ci
           # Force install optional dependencies if needed
           npm rebuild
+      - name: Verify npm cache integrity
+        run: |
+          if npm cache verify 2>/dev/null; then
+            echo "✅ NPM cache is valid"
+          else
+            echo "⚠️ NPM cache issues detected, clearing..."
+            npm cache clean --force
+          fi
       - name: Build
         id: build
         run: npm run build
       - name: Retry build with clean install
         if: failure()
         run: |
-          rm -rf node_modules package-lock.json
-          npm install
+          echo "Build failed, attempting clean reinstall..."
+          rm -rf node_modules package-lock.json .npm
+          npm cache clean --force
+          npm install --no-cache
           npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
