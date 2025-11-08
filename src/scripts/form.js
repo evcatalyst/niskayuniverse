@@ -26,28 +26,25 @@ export function initForm() {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=us`);
         const results = await response.json();
 
-        // Remove existing suggestions
-        const existingSuggestions = document.querySelector('.address-suggestions');
-        if (existingSuggestions) existingSuggestions.remove();
+        // Clear existing suggestions
+        const suggestionsDiv = document.getElementById('address-suggestions');
+        suggestionsDiv.innerHTML = '';
+        suggestionsDiv.style.display = 'none';
 
         if (results.length > 0) {
-          const suggestions = document.createElement('div');
-          suggestions.className = 'address-suggestions';
-          suggestions.style.cssText = 'position: absolute; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; z-index: 1000; width: 100%;';
-
           results.forEach(result => {
             const suggestion = document.createElement('div');
             suggestion.textContent = result.display_name;
             suggestion.style.cssText = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
             suggestion.addEventListener('click', () => {
               addressInput.value = result.display_name;
-              suggestions.remove();
+              suggestionsDiv.style.display = 'none';
+              suggestionsDiv.innerHTML = '';
             });
-            suggestions.appendChild(suggestion);
+            suggestionsDiv.appendChild(suggestion);
           });
 
-          addressInput.parentNode.style.position = 'relative';
-          addressInput.parentNode.appendChild(suggestions);
+          suggestionsDiv.style.display = 'block';
         }
       } catch (error) {
         console.log('Address autocomplete failed:', error);
