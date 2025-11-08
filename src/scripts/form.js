@@ -1,5 +1,6 @@
 // Form initialization and functionality
 export function initForm() {
+  console.log('initForm called');
   try {
     const form = document.getElementById('submit-form');
     if (!form) {
@@ -19,6 +20,7 @@ export function initForm() {
 
     // Address autocomplete
     addressInput.addEventListener('input', async (e) => {
+      console.log('Address input event triggered:', e.target.value);
       try {
         const query = e.target.value;
         if (query.length < 3) return;
@@ -27,27 +29,30 @@ export function initForm() {
         const results = await response.json();
 
         // Remove existing suggestions
-        const existingSuggestions = document.querySelector('.address-suggestions');
-        if (existingSuggestions) existingSuggestions.remove();
+        const existingSuggestions = document.getElementById('address-suggestions');
+        if (existingSuggestions) {
+          existingSuggestions.innerHTML = '';
+          existingSuggestions.style.display = 'none';
+        }
 
         if (results.length > 0) {
-          const suggestions = document.createElement('div');
-          suggestions.className = 'address-suggestions';
-          suggestions.style.cssText = 'position: absolute; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; z-index: 1000; width: 100%;';
-
-          results.forEach(result => {
-            const suggestion = document.createElement('div');
-            suggestion.textContent = result.display_name;
-            suggestion.style.cssText = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
-            suggestion.addEventListener('click', () => {
-              addressInput.value = result.display_name;
-              suggestions.remove();
+          const suggestions = document.getElementById('address-suggestions');
+          if (suggestions) {
+            suggestions.innerHTML = ''; // Clear existing content
+            
+            results.forEach(result => {
+              const suggestion = document.createElement('div');
+              suggestion.textContent = result.display_name;
+              suggestion.style.cssText = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
+              suggestion.addEventListener('click', () => {
+                addressInput.value = result.display_name;
+                suggestions.style.display = 'none';
+              });
+              suggestions.appendChild(suggestion);
             });
-            suggestions.appendChild(suggestion);
-          });
-
-          addressInput.parentNode.style.position = 'relative';
-          addressInput.parentNode.appendChild(suggestions);
+            
+            suggestions.style.display = 'block';
+          }
         }
       } catch (error) {
         console.log('Address autocomplete failed:', error);
