@@ -9,6 +9,7 @@ import SubmitForm from '../components/SubmitForm.astro';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Niskayuna Water Quality Atlas</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   </head>
   <body>
     <header>
@@ -20,6 +21,14 @@ import SubmitForm from '../components/SubmitForm.astro';
       <SubmitForm />
     </main>
     <script type="module" src="sw-register.js"></script>
-    <script is:inline src="../scripts/init.js"></script>
+    <script>
+      import { initMap } from '../scripts/map.js';
+      import { initForm } from '../scripts/form.js';
+
+      document.addEventListener('DOMContentLoaded', () => {
+        initMap();
+        initForm();
+      });
+    </script>
   </body>
 </html>
