@@ -22,10 +22,9 @@ import SubmitForm from '../components/SubmitForm.astro';
     </main>
     <script type="module" src="sw-register.js"></script>
     <script>
-      import { initMap } from '../scripts/map.js';
-      import { initForm } from '../scripts/form.js';
-
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', async () => {
+        const { initMap } = await import('../scripts/map.js');
+        const { initForm } = await import('../scripts/form.js');
         initMap();
         initForm();
       });
