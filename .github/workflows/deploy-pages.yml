@@ -31,52 +31,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          # No caching to avoid optional dependency issues
-      - name: Install dependencies
-        run: |
-          npm ci
-          # Force install optional dependencies if needed
-          npm rebuild
-      - name: Verify npm cache integrity
-        run: |
-          if npm cache verify 2>/dev/null; then
-            echo "✅ NPM cache is valid"
-          else
-            echo "⚠️ NPM cache issues detected, clearing..."
-            npm cache clean --force
-          fi
-      - name: Build
-        id: build
-        run: npm run build
-      - name: Retry build with clean install
-        if: failure()
-        run: |
-          echo "Build failed, attempting clean reinstall..."
-          rm -rf node_modules package-lock.json
-          npm install
-          npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload built files from dist directory
-          path: './dist'
+          # Upload public directory
+          path: './public'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Verify deployment
-        run: |
-          # Wait for deployment to propagate
-          sleep 30
-          # Check if the site loads correctly
-          if curl -s "https://evcatalyst.github.io/niskayuniverse/" | grep -q "Niskayuna Water Quality Atlas"; then
-            echo "✅ Deployment successful - site loads correctly"
-          else
-            echo "❌ Deployment failed - site not loading correctly"
-            exit 1
-          fi

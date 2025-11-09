@@ -1,17 +1,4 @@
 {
-  "name": "niskayuniverse-v2",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "format": "prettier -w ."
-  },
-  "dependencies": {
-    "astro": "^4.0.0"
-  },
-  "devDependencies": {
-    "prettier": "^3.2.0"
-  }
+  "name": "niskayuniverse",
+  "private": true
 }
