@@ -70,6 +70,11 @@ function initForm() {
       try {
         // Geocode the address
         const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+        
+        if (!geocodeResponse.ok) {
+          throw new Error(`Geocoding failed with status: ${geocodeResponse.status}`);
+        }
+        
         const geocodeResults = await geocodeResponse.json();
 
         if (geocodeResults.length === 0) {
@@ -102,6 +107,11 @@ function initForm() {
           })
         });
 
+        if (!submitResponse.ok) {
+          console.error('Server responded with status:', submitResponse.status);
+          throw new Error(`Server error: ${submitResponse.status}`);
+        }
+
         const result = await submitResponse.json();
 
         if (result.ok) {
@@ -112,11 +122,24 @@ function initForm() {
             window.addMarkerToMap({ latitude: lat, longitude: lon, pH: ph, email: email });
           }
         } else {
-          alert('Submission failed: ' + (result.error || 'Unknown error'));
+          const errorMsg = result.error || 'Unknown error';
+          console.error('Submission failed:', errorMsg);
+          alert('Submission failed: ' + errorMsg);
         }
       } catch (error) {
         console.error('Submission error:', error);
-        alert('Submission failed. Please try again.');
+        let userMessage = 'Submission failed. Please try again.';
+        
+        // Provide more specific error messages
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          userMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('Geocoding failed')) {
+          userMessage = 'Unable to validate address. Please try again.';
+        } else if (error.message.includes('Server error')) {
+          userMessage = 'Server temporarily unavailable. Please try again in a few moments.';
+        }
+        
+        alert(userMessage);
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Test';

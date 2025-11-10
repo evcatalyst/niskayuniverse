@@ -1,5 +1,16 @@
 // Google Apps Script for handling submissions
 // Deploy as Web App: Execute as me, Access: Anyone
+//
+// IMPORTANT DEPLOYMENT NOTES:
+// 1. When deploying, ensure "Execute as" is set to your account (to access the sheet)
+// 2. Set "Who has access" to "Anyone" (to allow public form submissions)
+// 3. After deployment, copy the Web App URL to use in app.js
+// 4. CORS is automatically handled by Google Apps Script for web apps
+// 5. If you get "Submission failed" errors, check:
+//    - The deployment URL is correct
+//    - The sheet ID below matches your Google Sheet
+//    - The sheet has a tab named "WaterQualityTests"
+//    - The deployed script has proper permissions
 
 const SHEET_ID = '1hrf9LBCEXEQ97ZTXE3IXz9gp99cDE8x_E9mcVYYNDv4'; // Replace with actual Google Sheet ID
 
