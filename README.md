@@ -1,23 +1,41 @@
-# Service Line Markers
+# Niskayuna Water Quality Atlas
 
-A production-ready web application demonstrating a "Pages for hosting, Actions for backend" architecture on GitHub Pages. Features an interactive service-line marker design system with configurable visual tokens, level-of-detail (LOD) switching, and a comprehensive control panel.
+A community-powered water quality monitoring application for Niskayuna, NY. Residents can submit water quality test results from their homes and view community data on an interactive map.
+
+## Overview
+
+The Niskayuna Water Quality Atlas enables residents to:
+
+- Submit water quality test results (pH, TDS, temperature, lead levels) with location data
+- View community water quality data on an interactive map
+- Track water quality trends across the neighborhood
+- Access historical test data
 
 ## Architecture
 
-This project uses GitHub Pages for static hosting and GitHub Actions as a serverless backend:
+This project uses a serverless architecture with GitHub Pages and Google Apps Script:
 
-- **Frontend**: React + TypeScript + Vite, deployed statically to GitHub Pages
-- **Backend**: Scheduled GitHub Actions fetch data from public APIs and commit JSON to the repository
-- **Design System**: Vanilla CSS + TypeScript for service-line markers with accessibility and performance optimizations
+- **Frontend**: Astro static site with Leaflet.js for interactive mapping
+- **Backend**: Google Apps Script for data storage and retrieval
+- **Data Storage**: Google Sheets for community submissions
+- **Deployment**: GitHub Pages with automated deployment via GitHub Actions
+- **Offline Support**: Service Worker for progressive web app (PWA) functionality
 
 ## Features
 
-- **Service-Line Markers**: 7 visual variants (split, nested, donut, hex, halo, band, pin) with configurable palettes and states
-- **Level of Detail (LOD)**: Automatic style switching based on zoom level
-- **Control Panel**: Interactive configuration with export/import, viewer/embed modes
-- **Map Examples**: Mapbox GL, Leaflet, and deck.gl integrations
-- **Accessibility**: WCAG AA compliant with keyboard navigation and screen reader support
-- **Performance**: Optimized for 50+ FPS with thousands of markers
+- **Interactive Map**: Leaflet-based map centered on Niskayuna, NY
+- **Data Submission Form**: 
+  - Email attribution for submitted tests
+  - Address autocomplete using OpenStreetMap Nominatim API
+  - Water quality metrics: pH, TDS (Total Dissolved Solids), temperature, lead levels
+  - Optional notes field for additional context
+- **Real-time Updates**: Automatic polling for new submissions every 30 seconds
+- **Color-Coded Markers**: 
+  - Red: pH < 6.5 (acidic)
+  - Green: pH 6.5-8.5 (neutral)
+  - Blue: pH > 8.5 (alkaline)
+- **Sample Data**: Pre-populated with example test results
+- **Offline Caching**: Service worker caches assets and data for offline viewing
 
 ## Quick Start
 
@@ -26,6 +44,8 @@ npm install
 npm run dev
 ```
 
+Visit `http://localhost:4321/niskayuniverse/` to view the application.
+
 ## Development
 
 ### Prerequisites
@@ -33,126 +53,125 @@ npm run dev
 - Node.js 20+
 - npm
 
-### Scripts
+### Available Scripts
 
-- `npm run dev` - Start development server
+- `npm run dev` - Start Astro development server
 - `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run typecheck` - Run TypeScript type checking
-- `npm run lint` - Run ESLint
-- `npm run test` - Run unit tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run e2e` - Run end-to-end tests
-- `npm run a11y` - Run accessibility tests
+- `npm run preview` - Preview production build locally
+- `npm run format` - Format code with Prettier
+
+### Project Structure
+
+```
+├── src/
+│   ├── pages/
+│   │   └── index.astro          # Main page
+│   ├── components/
+│   │   ├── Map.astro            # Map container component
+│   │   └── SubmitForm.astro     # Water quality submission form
+│   └── scripts/
+│       ├── map.js               # Map initialization and marker logic
+│       └── form.js              # Form handling and address autocomplete
+├── public/
+│   └── data/
+│       └── tests.json           # Sample water quality data
+├── sw.js                        # Service worker for offline support
+└── astro.config.mjs             # Astro configuration
+```
 
 ## Deployment
 
-### GitHub Pages Setup
+### GitHub Pages
 
-1. Enable GitHub Pages in repository settings
-2. Set source to "GitHub Actions"
-3. Push to `main` branch to trigger deployment
-4. Optional: Add custom domain via `CNAME` file
+The site automatically deploys to GitHub Pages when changes are pushed to the `v2` branch:
 
-### Preview Deployments
+1. GitHub Actions builds the Astro site
+2. Static files are deployed to GitHub Pages
+3. Site is available at `https://evcatalyst.github.io/niskayuniverse/`
 
-Pull requests automatically create preview deployments via GitHub Actions.
+### Manual Deployment
+
+```bash
+npm run build
+# Built files are in ./dist
+```
 
 ## Data Backend
 
-The `data-sync.yml` workflow runs hourly and on manual trigger:
+### Google Apps Script Integration
 
-1. Fetches data from public JSON APIs
-2. Processes and validates data
-3. Commits updated JSON files to `public/data/`
-4. Site instantly reflects changes
+The application uses Google Apps Script as a serverless backend:
 
-To add new data sources, modify `scripts/fetch-data.mts`.
+- **Endpoint**: `https://script.google.com/macros/s/AKfycbyTuL-uqaZnb4z9SjPBDi5yjSFvj7kc5ymTKa7zNkLNDAWeNaWHFevLt4VR606qs5G4/exec`
+- **GET**: Retrieves all water quality test submissions
+- **POST**: Submits new water quality test data
+- **Storage**: Google Sheets stores all submissions
 
-## Design System
+### Data Format
 
-### Tokens
+```json
+{
+  "timestamp": "2025-11-02T10:30:00Z",
+  "userEmail": "user@example.com",
+  "userName": "John Doe",
+  "latitude": 42.7851,
+  "longitude": -73.8949,
+  "address": "123 Main St, Niskayuna, NY",
+  "pH": 7.2,
+  "tds": 150,
+  "temperature": 68,
+  "lead": null,
+  "notes": "Kitchen tap test",
+  "verified": true
+}
+```
 
-All visual tokens are defined in `src/styles/tokens.css` as CSS variables. Supports three palettes:
+## How to Submit Water Quality Data
 
-- Okabe-Ito (colorblind-safe, default)
-- ColorBrewer Dark2
-- Monochrome with patterns
+1. Visit the site at [https://evcatalyst.github.io/niskayuniverse/](https://evcatalyst.github.io/niskayuniverse/)
+2. Fill out the submission form:
+   - **Email**: Your email for attribution
+   - **Address**: Start typing your address (autocomplete suggestions will appear)
+   - **pH**: Required (0-14 scale)
+   - **TDS**: Optional (Total Dissolved Solids in ppm)
+   - **Temperature**: Optional (in °F)
+   - **Lead**: Optional (in ppb)
+   - **Notes**: Optional observations or test conditions
+3. Click "Submit Test"
+4. Your marker will appear on the map within 30 seconds
 
-### Marker Variants
+## APIs Used
 
-- `split`: Circle split left/right (private/public)
-- `nested`: Inner dot (private) + outer ring (public)
-- `donut`: Ring with two semicircles
-- `hex`: Hexagon split left/right
-- `halo`: Outer halo (public) + inner dot (private)
-- `band`: Rounded capsule split left/right
-- `pin`: Badge/pin split left/right
-
-### States
-
-- Lead present: Optional pulse animation
-- Unknown material: Dashed outline or stripe pattern
-- Verified: Thin inner outline
-
-### Level of Detail
-
-Automatic switching based on zoom:
-
-- City (≤12): `halo` style, small size
-- Neighborhood (12-15): `nested` style, medium size
-- Parcel (≥15): `split` style, large size
-
-## Control Panel
-
-Located at `public/control-panel.html`, provides:
-
-- Live configuration of all marker options
-- Export/import JSON configurations
-- Viewer and embed link generation
-- PostMessage API for embedded usage
-
-## Map Examples
-
-- `public/examples/mapbox-gl.html` - Mapbox GL JS integration
-- `public/examples/leaflet.html` - Leaflet integration
-- `public/examples/deckgl.html` - deck.gl integration
-
-Mapbox requires an API token (optional, falls back to MapLibre GL).
+- **OpenStreetMap Nominatim**: Address geocoding and autocomplete
+- **Google Apps Script**: Data storage and retrieval
+- **Leaflet.js**: Interactive mapping
+- **OpenStreetMap Tiles**: Map visualization
 
 ## Testing
 
-### Unit Tests
+See [TESTING.md](TESTING.md) for detailed testing instructions, including:
 
-```bash
-npm run test
-```
+- Address autocomplete verification
+- Form submission testing
+- Map functionality checks
+- Data persistence validation
 
-### E2E Tests
+## Known Limitations
 
-```bash
-npm run e2e
-```
-
-### Accessibility
-
-```bash
-npm run a11y
-```
-
-## Configuration Schema
-
-See `public/config.schema.json` for the complete JSON Schema definition of marker configurations.
+- Google Apps Script rate limits: 5 requests per minute per user
+- Nominatim API requests should be throttled (1 per second recommended)
+- Form submissions require valid coordinates from geocoding
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make changes with tests
-4. Ensure CI passes
-5. Submit pull request
+2. Create a feature branch (`git checkout -b feature/improvement`)
+3. Make your changes
+4. Test locally with `npm run build && npm run preview`
+5. Commit your changes (`git commit -am 'Add new feature'`)
+6. Push to the branch (`git push origin feature/improvement`)
+7. Open a Pull Request
 
 ## License
 
-MIT# Updated
- 
+MIT
