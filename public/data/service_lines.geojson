@@ -1,0 +1,59 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "svc-001",
+        "address": "123 River Road",
+        "private_material": "copper",
+        "public_material": "ductile iron",
+        "status": "verified",
+        "updated": "2024-12-01"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8898,
+          42.8086
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "svc-002",
+        "address": "45 Balltown Road",
+        "private_material": "unknown",
+        "public_material": "unknown",
+        "status": "unknown",
+        "updated": "2024-11-12"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9005,
+          42.8113
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "svc-003",
+        "address": "782 Troy Schenectady Road",
+        "private_material": "galvanized",
+        "public_material": "copper",
+        "status": "verified",
+        "updated": "2024-10-22"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8665,
+          42.7879
+        ]
+      }
+    }
+  ]
+}

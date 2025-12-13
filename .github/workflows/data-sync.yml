@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,7 +29,13 @@ jobs:
         run: npm ci
 
       - name: Fetch and process data
-        run: node scripts/fetch-data.mts
+        env:
+          SERVICE_LINES_URL: ${{ vars.SERVICE_LINES_URL }}
+          SUBMISSIONS_URL: ${{ vars.SUBMISSIONS_URL }}
+        run: node scripts/fetch-data.mjs
+
+      - name: Validate data files
+        run: npm run validate:data
 
       - name: Check for changes
         id: verify-changed-files

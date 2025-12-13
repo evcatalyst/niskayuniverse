@@ -1,158 +1,82 @@
-# Service Line Markers
+# Water Atlas (MunicipalityName)
 
-A production-ready web application demonstrating a "Pages for hosting, Actions for backend" architecture on GitHub Pages. Features an interactive service-line marker design system with configurable visual tokens, level-of-detail (LOD) switching, and a comprehensive control panel.
+A lightweight, static “Water Atlas” template for municipalities. It ships with:
 
-## Architecture
+- Astro static output (GitHub Pages friendly)
+- Leaflet map loading inventory (`public/data/service_lines.geojson`) and resident submissions (`public/data/submissions.json`)
+- Address autocomplete via Nominatim
+- Configurable submission POST endpoint (no secrets committed)
+- GitHub Actions for manual/scheduled data refresh into `public/data/`
 
-This project uses GitHub Pages for static hosting and GitHub Actions as a serverless backend:
+## Stack
 
-- **Frontend**: React + TypeScript + Vite, deployed statically to GitHub Pages
-- **Backend**: Scheduled GitHub Actions fetch data from public APIs and commit JSON to the repository
-- **Design System**: Vanilla CSS + TypeScript for service-line markers with accessibility and performance optimizations
+- Astro 4 (static output)
+- Leaflet (CDN) for mapping
+- Vanilla JS for form, autocomplete, and map overlays
 
-## Features
+## Base path & site config
 
-- **Service-Line Markers**: 7 visual variants (split, nested, donut, hex, halo, band, pin) with configurable palettes and states
-- **Level of Detail (LOD)**: Automatic style switching based on zoom level
-- **Control Panel**: Interactive configuration with export/import, viewer/embed modes
-- **Map Examples**: Mapbox GL, Leaflet, and deck.gl integrations
-- **Accessibility**: WCAG AA compliant with keyboard navigation and screen reader support
-- **Performance**: Optimized for 50+ FPS with thousands of markers
+All runtime paths flow through [`src/lib/siteConfig.js`](src/lib/siteConfig.js):
 
-## Quick Start
+- `basePath` (default `/niskayuniverse`) – used by Astro `base`, `<base>` tag, and data URLs.
+- `dataPaths` – relative paths under `public/data/`.
+- `dataSources` – optional remote URLs for `scripts/fetch-data`.
+- `submissionEndpoint` – POST target for submissions (defaults to `https://httpbin.org/post`).
+
+When deploying under another repo name, update `basePath` (and `site` if desired) in `siteConfig`.
+
+## Running locally
 
 ```bash
-npm install
+npm ci
 npm run dev
+# build check
+npm run build
+# data validation
+npm run validate:data
 ```
 
-## Development
+Open http://localhost:4321 (Astro default). The map reads sample data from `public/data/`.
 
-### Prerequisites
+## Data pipeline
 
-- Node.js 20+
-- npm
+Scripts live in `scripts/`:
 
-### Scripts
+- `npm run fetch:data` – fetches remote sources (if `SERVICE_LINES_URL` / `SUBMISSIONS_URL` are set as env or repo variables), validates, and writes to `public/data/`.
+- `npm run validate:data` – validates the checked-in files (`service_lines.geojson`, `submissions.json`).
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run typecheck` - Run TypeScript type checking
-- `npm run lint` - Run ESLint
-- `npm run test` - Run unit tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run e2e` - Run end-to-end tests
-- `npm run a11y` - Run accessibility tests
+Validation rules:
+
+- `service_lines.geojson` must be a FeatureCollection of Point features with `id`, `address`, and valid coordinates.
+- `submissions.json` must be an array; each entry needs `id`, `address`, `submittedAt`, and optional `coordinates { lat, lng }`.
+
+### GitHub Actions
+
+- [`deploy.yml`](.github/workflows/deploy.yml): runs on push to `main` (or manual) → validates data → `npm run build` → deploys to GitHub Pages.
+- [`data-sync.yml`](.github/workflows/data-sync.yml): manual by default (cron commented) → `npm ci` → `npm run fetch:data` → `npm run validate:data` → commits `public/data/` only if changed. Configure repo **Variables** `SERVICE_LINES_URL` and `SUBMISSIONS_URL` to point at your sources.
+
+Other legacy workflows/configs were removed to keep this track canonical.
+
+## Data & examples
+
+- `public/data/service_lines.geojson`: sample FeatureCollection.
+- `public/data/submissions.json`: sample resident submissions.
+- `public/examples/leaflet.html`: standalone Leaflet demo (resolves paths via the base path).
+- `public/control-panel.html`: quick visual preview of service line markers.
+
+## Submission flow
+
+- Address autocomplete uses Nominatim (respect rate limits).
+- Form POSTs JSON to `siteConfig.submissionEndpoint` (configurable; defaults to a safe placeholder).
+- No secrets are committed; supply endpoints via env/repo variables.
 
 ## Deployment
 
-### GitHub Pages Setup
+GitHub Pages is the expected host. Ensure Pages source is “GitHub Actions” and push to `main` to deploy. The base path should match the repository name unless you set a custom domain. Workflows already use the base path from `siteConfig`.
 
-1. Enable GitHub Pages in repository settings
-2. Set source to "GitHub Actions"
-3. Push to `main` branch to trigger deployment
-4. Optional: Add custom domain via `CNAME` file
+## Notes for new municipalities
 
-### Preview Deployments
-
-Pull requests automatically create preview deployments via GitHub Actions.
-
-## Data Backend
-
-The `data-sync.yml` workflow runs hourly and on manual trigger:
-
-1. Fetches data from public JSON APIs
-2. Processes and validates data
-3. Commits updated JSON files to `public/data/`
-4. Site instantly reflects changes
-
-To add new data sources, modify `scripts/fetch-data.mts`.
-
-## Design System
-
-### Tokens
-
-All visual tokens are defined in `src/styles/tokens.css` as CSS variables. Supports three palettes:
-
-- Okabe-Ito (colorblind-safe, default)
-- ColorBrewer Dark2
-- Monochrome with patterns
-
-### Marker Variants
-
-- `split`: Circle split left/right (private/public)
-- `nested`: Inner dot (private) + outer ring (public)
-- `donut`: Ring with two semicircles
-- `hex`: Hexagon split left/right
-- `halo`: Outer halo (public) + inner dot (private)
-- `band`: Rounded capsule split left/right
-- `pin`: Badge/pin split left/right
-
-### States
-
-- Lead present: Optional pulse animation
-- Unknown material: Dashed outline or stripe pattern
-- Verified: Thin inner outline
-
-### Level of Detail
-
-Automatic switching based on zoom:
-
-- City (≤12): `halo` style, small size
-- Neighborhood (12-15): `nested` style, medium size
-- Parcel (≥15): `split` style, large size
-
-## Control Panel
-
-Located at `public/control-panel.html`, provides:
-
-- Live configuration of all marker options
-- Export/import JSON configurations
-- Viewer and embed link generation
-- PostMessage API for embedded usage
-
-## Map Examples
-
-- `public/examples/mapbox-gl.html` - Mapbox GL JS integration
-- `public/examples/leaflet.html` - Leaflet integration
-- `public/examples/deckgl.html` - deck.gl integration
-
-Mapbox requires an API token (optional, falls back to MapLibre GL).
-
-## Testing
-
-### Unit Tests
-
-```bash
-npm run test
-```
-
-### E2E Tests
-
-```bash
-npm run e2e
-```
-
-### Accessibility
-
-```bash
-npm run a11y
-```
-
-## Configuration Schema
-
-See `public/config.schema.json` for the complete JSON Schema definition of marker configurations.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make changes with tests
-4. Ensure CI passes
-5. Submit pull request
-
-## License
-
-MIT# Updated
- 
+1. Update `src/lib/siteConfig.js` (`municipalityName`, `basePath`, `map.center`, endpoints).
+2. Configure repo variables `SERVICE_LINES_URL` / `SUBMISSIONS_URL`.
+3. Run `npm run fetch:data && npm run validate:data`.
+4. Commit and push to `main` to deploy.
