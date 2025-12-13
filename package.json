@@ -1,12 +1,15 @@
 {
   "name": "niskayuniverse",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "fetch:data": "node scripts/fetch-data.mjs",
+    "validate:data": "node scripts/validate-data.mjs"
   },
   "dependencies": {
     "astro": "^4.0.0"

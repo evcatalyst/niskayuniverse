@@ -1,0 +1,36 @@
+[
+  {
+    "id": "submission-001",
+    "address": "124 River Road",
+    "coordinates": { "lat": 42.8082, "lng": -73.889 },
+    "ph": 7.3,
+    "tds": 128,
+    "temperatureF": 64.5,
+    "leadPpb": 0.8,
+    "notes": "Tap test from kitchen sink.",
+    "status": "received",
+    "submittedAt": "2024-12-02T10:15:00Z"
+  },
+  {
+    "id": "submission-002",
+    "address": "Nott Street",
+    "coordinates": { "lat": 42.8131, "lng": -73.9021 },
+    "ph": 6.9,
+    "tds": 142,
+    "temperatureF": 62.1,
+    "notes": "Resident reported slight discoloration after flushing.",
+    "status": "received",
+    "submittedAt": "2024-11-20T15:30:00Z"
+  },
+  {
+    "id": "submission-003",
+    "address": "Rosendale Road",
+    "coordinates": { "lat": 42.7872, "lng": -73.873 },
+    "ph": 7.1,
+    "tds": 118,
+    "temperatureF": 60.4,
+    "leadPpb": 1.4,
+    "status": "received",
+    "submittedAt": "2024-11-05T09:45:00Z"
+  }
+]
