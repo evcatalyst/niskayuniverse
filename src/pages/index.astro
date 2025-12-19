@@ -17,7 +17,7 @@ const zoom = siteConfig.map.zoom;
     <title>{siteConfig.municipalityName} Water Atlas</title>
     <base href={baseHref} />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   </head>
   <body>
     <header>
@@ -90,15 +90,15 @@ const zoom = siteConfig.map.zoom;
       </section>
     </main>
 
-    <script>
+    <script define:vars={{ lat, lng, zoom }}>
       const config = {
         basePath: document.documentElement.dataset.basePath,
         serviceLinesUrl: document.documentElement.dataset.serviceLines,
         submissionsUrl: document.documentElement.dataset.submissions,
         submissionEndpoint: document.documentElement.dataset.submissionEndpoint,
         nominatimEndpoint: document.documentElement.dataset.nominatim,
-        mapCenter: [{lat}, {lng}],
-        mapZoom: {zoom},
+        mapCenter: [lat, lng],
+        mapZoom: zoom,
       };
 
       const serviceLineColors = {
