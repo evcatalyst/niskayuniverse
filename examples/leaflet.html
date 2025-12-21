@@ -358,8 +358,6 @@
 
       function getMarkerStyle(marker, zoom) {
         const material = marker.private_type || 'unknown'
-        const side = 'unknown' // Not available in current data
-        const verified = marker.verified
 
         let style = {
           weight: 2,

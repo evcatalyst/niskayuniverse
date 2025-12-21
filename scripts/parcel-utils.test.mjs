@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { parseYearBuilt, normalizeParcelId, attachProvenance } from './parcel-utils.mjs'
 
 describe('parseYearBuilt', () => {
@@ -210,11 +210,11 @@ describe('attachProvenance', () => {
   it('should throw error when parcel is not an object', () => {
     expect(() => {
       attachProvenance('not an object', { source: 'Test' })
-    }).toThrow('Parcel must be an object')
+    }).toThrow(/Parcel must be an object, received string/)
 
     expect(() => {
       attachProvenance(123, { source: 'Test' })
-    }).toThrow('Parcel must be an object')
+    }).toThrow(/Parcel must be an object, received number/)
   })
 
   it('should throw error when source is missing', () => {

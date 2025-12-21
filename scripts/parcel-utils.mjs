@@ -70,7 +70,10 @@ export function attachProvenance(parcel, options = {}) {
   }
 
   if (typeof parcel !== 'object') {
-    throw new Error('Parcel must be an object, received: ' + typeof parcel)
+    const receivedType = typeof parcel
+    const receivedValue =
+      receivedType === 'string' || receivedType === 'number' ? JSON.stringify(parcel) : receivedType
+    throw new Error(`Parcel must be an object, received ${receivedType}: ${receivedValue}`)
   }
 
   if (!options.source) {

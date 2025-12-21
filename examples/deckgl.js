@@ -31,7 +31,7 @@ async function init() {
     const response = await fetch(
       'https://raw.githubusercontent.com/evcatalyst/niskayuniverse/main/data/markers.json'
     )
-    let data = await response.json()
+    data = await response.json()
 
     // Limit to first 500 markers for performance
     data = data.slice(0, 500)
