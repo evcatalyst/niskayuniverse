@@ -32,7 +32,9 @@ jobs:
         env:
           SERVICE_LINES_URL: ${{ vars.SERVICE_LINES_URL }}
           SUBMISSIONS_URL: ${{ vars.SUBMISSIONS_URL }}
-        run: node scripts/fetch-data.mjs
+        run: |
+          node scripts/fetch-data.mjs
+          npm run fetch:parcels
 
       - name: Validate data files
         run: npm run validate:data
