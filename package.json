@@ -9,12 +9,25 @@
     "preview": "astro preview",
     "astro": "astro",
     "fetch:data": "node scripts/fetch-data.mjs",
-    "validate:data": "node scripts/validate-data.mjs"
+    "validate:data": "node scripts/validate-data.mjs",
+    "ingest:parcels": "node scripts/ingest-parcels.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "astro": "^4.0.0"
   },
   "devDependencies": {
-    "prettier": "^3.2.0"
+    "@playwright/test": "^1.57.0",
+    "@vitest/ui": "^4.0.16",
+    "prettier": "^3.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   }
 }
