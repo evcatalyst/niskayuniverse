@@ -220,6 +220,11 @@
       const parcelId = escapeHtml(properties.parcel_id || 'N/A');
       // Support both old format (address) and new format (street_addr)
       const address = escapeHtml(properties.address || properties.street_addr || 'N/A');
+      const ownerName = properties.owner_name ? escapeHtml(properties.owner_name) : '';
+      const city = properties.city ? escapeHtml(properties.city) : '';
+      const zip = properties.zip ? escapeHtml(properties.zip) : '';
+      const swisCode = properties.swis_code ? escapeHtml(properties.swis_code) : '';
+      const swisPrintKey = properties.swis_print_key_id ? escapeHtml(properties.swis_print_key_id) : '';
       const buildingType = properties.building_type ? escapeHtml(properties.building_type) : '';
       // Handle provenance: can be a string or an object with source property
       const provenanceSource = properties.provenance 
@@ -231,9 +236,14 @@
       return `
         <strong>Parcel ${parcelId}</strong>
         <div class="info-row"><strong>Address:</strong> ${address}</div>
+        ${city ? `<div class="info-row"><strong>City:</strong> ${city}</div>` : ''}
+        ${zip ? `<div class="info-row"><strong>ZIP:</strong> ${zip}</div>` : ''}
+        ${ownerName ? `<div class="info-row"><strong>Owner:</strong> ${ownerName}</div>` : ''}
         <div class="info-row"><strong>Year Built:</strong> ${yearBuilt}</div>
         <div class="info-row"><strong>Age Category:</strong> ${ageCategory}</div>
         ${buildingType ? `<div class="info-row"><strong>Type:</strong> ${buildingType}</div>` : ''}
+        ${swisCode ? `<div class="info-row"><strong>SWIS Code:</strong> ${swisCode}</div>` : ''}
+        ${swisPrintKey ? `<div class="info-row"><strong>SWIS Print Key:</strong> ${swisPrintKey}</div>` : ''}
         ${provenanceSource ? `<div class="info-row"><strong>Source:</strong> ${provenanceSource}</div>` : ''}
       `;
     }
