@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en" data-base-path="/niskayuniverse/">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parcel Building Age | Water Atlas</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+    
+    .controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 1000;
+      min-width: 200px;
+    }
+    
+    .controls h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+    }
+    
+    .controls label {
+      display: block;
+      margin: 6px 0;
+      font-size: 13px;
+      cursor: pointer;
+      color: #475569;
+    }
+    
+    .controls input[type="checkbox"] {
+      margin-right: 6px;
+    }
+    
+    .legend {
+      position: absolute;
+      bottom: 24px;
+      left: 12px;
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+    
+    .legend h4 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 4px 0;
+      font-size: 12px;
+      color: #475569;
+    }
+    
+    .legend-color {
+      width: 20px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .badge {
+      background: #0ea5e9;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 999px;
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 999;
+      box-shadow: 0 8px 22px rgba(14,165,233,0.35);
+      font-size: 13px;
+    }
+    
+    .leaflet-popup-content {
+      margin: 8px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    .leaflet-popup-content strong {
+      color: #0f172a;
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    .leaflet-popup-content .info-row {
+      margin: 2px 0;
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="badge">Parcel Age Visualization with LOD Switching</div>
+  
+  <div class="controls">
+    <h3>Layer Toggles</h3>
+    <label>
+      <input type="checkbox" id="toggle-parcels" checked>
+      Parcel Polygons
+    </label>
+    <label>
+      <input type="checkbox" id="toggle-service-lines" checked>
+      Service Lines
+    </label>
+  </div>
+  
+  <div class="legend">
+    <h4>Building Age</h4>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #7c2d12;"></div>
+      <span>Pre-1920</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #ea580c;"></div>
+      <span>1920–1950</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #fbbf24;"></div>
+      <span>1951–1986</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #4ade80;"></div>
+      <span>Post-1986</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #94a3b8;"></div>
+      <span>Unknown</span>
+    </div>
+    <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #0ea5e9;"></div>
+        <span>Service Lines</span>
+      </div>
+    </div>
+  </div>
+  
+  <div id="map"></div>
+  
+  <script>
+    // Base path resolution
+    const baseFromDir = new URL('.', document.baseURI).pathname;
+    const rawBase = document.documentElement.dataset.basePath || baseFromDir;
+    const basePath = rawBase.replace(/examples\/?$/, '');
+    const originBase = `${window.location.origin}${basePath}`;
+    const parcelsUrl = new URL('data/parcels_nys.geojson', originBase).pathname;
+    const serviceLinesUrl = new URL('data/service_lines.geojson', originBase).pathname;
+    
+    // Initialize map
+    const map = L.map('map').setView([42.8073, -73.8945], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Layer references
+    let parcelLayer = null;
+    let parcelCentroidLayer = null;
+    let serviceLineLayer = null;
+    
+    // LOD threshold - below this zoom, show centroids; above, show polygons
+    const LOD_ZOOM_THRESHOLD = 15;
+    
+    // Toggle state
+    let showParcels = true;
+    let showServiceLines = true;
+    
+    // Building age color mapping
+    function getAgeColor(yearBuilt) {
+      if (!yearBuilt || yearBuilt === null) return '#94a3b8'; // Unknown - gray
+      if (yearBuilt < 1920) return '#7c2d12'; // Pre-1920 - dark brown
+      if (yearBuilt >= 1920 && yearBuilt <= 1950) return '#ea580c'; // 1920-1950 - orange
+      if (yearBuilt >= 1951 && yearBuilt <= 1986) return '#fbbf24'; // 1951-1986 - amber
+      return '#4ade80'; // Post-1986 - green
+    }
+    
+    // Get age category label
+    function getAgeCategory(yearBuilt) {
+      if (!yearBuilt || yearBuilt === null) return 'Unknown';
+      if (yearBuilt < 1920) return 'Pre-1920';
+      if (yearBuilt >= 1920 && yearBuilt <= 1950) return '1920–1950';
+      if (yearBuilt >= 1951 && yearBuilt <= 1986) return '1951–1986';
+      return 'Post-1986';
+    }
+    
+    // Create popup content
+    function createParcelPopup(properties) {
+      const yearBuilt = properties.year_built || 'Unknown';
+      const ageCategory = getAgeCategory(properties.year_built);
+      
+      return `
+        <strong>Parcel ${properties.parcel_id || 'N/A'}</strong>
+        <div class="info-row"><strong>Address:</strong> ${properties.address || 'N/A'}</div>
+        <div class="info-row"><strong>Year Built:</strong> ${yearBuilt}</div>
+        <div class="info-row"><strong>Age Category:</strong> ${ageCategory}</div>
+        ${properties.building_type ? `<div class="info-row"><strong>Type:</strong> ${properties.building_type}</div>` : ''}
+        ${properties.provenance ? `<div class="info-row"><strong>Source:</strong> ${properties.provenance}</div>` : ''}
+      `;
+    }
+    
+    // Load and render parcel polygons
+    function loadParcelPolygons(geojson) {
+      if (parcelLayer) {
+        parcelLayer.remove();
+      }
+      
+      parcelLayer = L.geoJSON(geojson, {
+        style: (feature) => ({
+          fillColor: getAgeColor(feature.properties.year_built),
+          weight: 1,
+          opacity: 0.8,
+          color: '#334155',
+          fillOpacity: 0.6
+        }),
+        onEachFeature: (feature, layer) => {
+          layer.bindPopup(createParcelPopup(feature.properties));
+          
+          // Hover effects
+          layer.on('mouseover', function(e) {
+            const layer = e.target;
+            layer.setStyle({
+              weight: 2,
+              fillOpacity: 0.8
+            });
+          });
+          
+          layer.on('mouseout', function(e) {
+            parcelLayer.resetStyle(e.target);
+          });
+        }
+      });
+      
+      return parcelLayer;
+    }
+    
+    // Load and render parcel centroids (for low zoom levels)
+    function loadParcelCentroids(geojson) {
+      if (parcelCentroidLayer) {
+        parcelCentroidLayer.remove();
+      }
+      
+      const centroidFeatures = geojson.features.map(feature => {
+        // Calculate centroid of polygon
+        const coords = feature.geometry.coordinates[0];
+        const lats = coords.map(c => c[1]);
+        const lngs = coords.map(c => c[0]);
+        const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
+        const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
+        
+        return {
+          type: 'Feature',
+          properties: feature.properties,
+          geometry: {
+            type: 'Point',
+            coordinates: [centroidLng, centroidLat]
+          }
+        };
+      });
+      
+      const centroidCollection = {
+        type: 'FeatureCollection',
+        features: centroidFeatures
+      };
+      
+      parcelCentroidLayer = L.geoJSON(centroidCollection, {
+        pointToLayer: (feature, latlng) => {
+          return L.circleMarker(latlng, {
+            radius: 6,
+            fillColor: getAgeColor(feature.properties.year_built),
+            color: '#334155',
+            weight: 1,
+            opacity: 0.8,
+            fillOpacity: 0.7
+          });
+        },
+        onEachFeature: (feature, layer) => {
+          layer.bindPopup(createParcelPopup(feature.properties));
+        }
+      });
+      
+      return parcelCentroidLayer;
+    }
+    
+    // Update parcel layer based on zoom level (LOD switching)
+    function updateParcelLOD() {
+      const currentZoom = map.getZoom();
+      
+      if (!showParcels) {
+        if (parcelLayer && map.hasLayer(parcelLayer)) parcelLayer.remove();
+        if (parcelCentroidLayer && map.hasLayer(parcelCentroidLayer)) parcelCentroidLayer.remove();
+        return;
+      }
+      
+      if (currentZoom >= LOD_ZOOM_THRESHOLD) {
+        // High zoom - show polygons
+        if (parcelCentroidLayer && map.hasLayer(parcelCentroidLayer)) {
+          parcelCentroidLayer.remove();
+        }
+        if (parcelLayer && !map.hasLayer(parcelLayer)) {
+          parcelLayer.addTo(map);
+        }
+      } else {
+        // Low zoom - show centroids for performance
+        if (parcelLayer && map.hasLayer(parcelLayer)) {
+          parcelLayer.remove();
+        }
+        if (parcelCentroidLayer && !map.hasLayer(parcelCentroidLayer)) {
+          parcelCentroidLayer.addTo(map);
+        }
+      }
+    }
+    
+    // Load parcels
+    fetch(parcelsUrl)
+      .then(res => res.json())
+      .then(geojson => {
+        parcelLayer = loadParcelPolygons(geojson);
+        parcelCentroidLayer = loadParcelCentroids(geojson);
+        updateParcelLOD();
+      })
+      .catch(err => console.error('Parcel load failed', err));
+    
+    // Load service lines
+    fetch(serviceLinesUrl)
+      .then(res => res.json())
+      .then(geojson => {
+        serviceLineLayer = L.geoJSON(geojson, {
+          pointToLayer: (_, latlng) => L.circleMarker(latlng, {
+            radius: 7,
+            color: '#0ea5e9',
+            weight: 2,
+            fillColor: '#0ea5e9',
+            fillOpacity: 0.7
+          }),
+          onEachFeature: (feature, layer) => {
+            const props = feature.properties || {};
+            const popup = `
+              <strong>${props.address || 'Service line'}</strong>
+              <div class="info-row"><strong>ID:</strong> ${props.id || 'N/A'}</div>
+              ${props.private_material ? `<div class="info-row"><strong>Private:</strong> ${props.private_material}</div>` : ''}
+              ${props.public_material ? `<div class="info-row"><strong>Public:</strong> ${props.public_material}</div>` : ''}
+              ${props.status ? `<div class="info-row"><strong>Status:</strong> ${props.status}</div>` : ''}
+            `;
+            layer.bindPopup(popup);
+          }
+        }).addTo(map);
+      })
+      .catch(err => console.error('Service line load failed', err));
+    
+    // Zoom event handler for LOD switching
+    map.on('zoomend', updateParcelLOD);
+    
+    // Toggle controls
+    document.getElementById('toggle-parcels').addEventListener('change', (e) => {
+      showParcels = e.target.checked;
+      updateParcelLOD();
+    });
+    
+    document.getElementById('toggle-service-lines').addEventListener('change', (e) => {
+      showServiceLines = e.target.checked;
+      if (serviceLineLayer) {
+        if (showServiceLines) {
+          serviceLineLayer.addTo(map);
+        } else {
+          serviceLineLayer.remove();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

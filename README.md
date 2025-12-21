@@ -61,7 +61,9 @@ Other legacy workflows/configs were removed to keep this track canonical.
 
 - `public/data/service_lines.geojson`: sample FeatureCollection.
 - `public/data/submissions.json`: sample resident submissions.
+- `public/data/parcels_nys.geojson`: sample parcel polygons with building age data.
 - `public/examples/leaflet.html`: standalone Leaflet demo (resolves paths via the base path).
+- `public/examples/parcels-age.html`: parcel building age visualization with LOD switching, layer toggles, and choropleth mapping.
 - `public/control-panel.html`: quick visual preview of service line markers.
 
 ## Submission flow

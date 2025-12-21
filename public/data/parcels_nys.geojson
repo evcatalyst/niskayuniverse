@@ -1,0 +1,225 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-67.1",
+        "year_built": 1895,
+        "address": "120 River Road",
+        "owner_name": "Smith Family Trust",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-11-15"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8900, 42.8088],
+          [-73.8898, 42.8088],
+          [-73.8898, 42.8086],
+          [-73.8900, 42.8086],
+          [-73.8900, 42.8088]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-67.2",
+        "year_built": 1935,
+        "address": "124 River Road",
+        "owner_name": "Johnson LLC",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-10-22"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8896, 42.8088],
+          [-73.8894, 42.8088],
+          [-73.8894, 42.8086],
+          [-73.8896, 42.8086],
+          [-73.8896, 42.8088]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-67.3",
+        "year_built": 1967,
+        "address": "128 River Road",
+        "owner_name": "Davis Properties",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-09-10"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8892, 42.8088],
+          [-73.8890, 42.8088],
+          [-73.8890, 42.8086],
+          [-73.8892, 42.8086],
+          [-73.8892, 42.8088]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-68.1",
+        "year_built": 2005,
+        "address": "43 Balltown Road",
+        "owner_name": "Martinez Construction",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-12-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.9007, 42.8115],
+          [-73.9005, 42.8115],
+          [-73.9005, 42.8113],
+          [-73.9007, 42.8113],
+          [-73.9007, 42.8115]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-68.2",
+        "year_built": null,
+        "address": "47 Balltown Road",
+        "owner_name": "Unknown Owner",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-08-15"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.9003, 42.8115],
+          [-73.9001, 42.8115],
+          [-73.9001, 42.8113],
+          [-73.9003, 42.8113],
+          [-73.9003, 42.8115]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-69.1",
+        "year_built": 1912,
+        "address": "780 Troy Schenectady Road",
+        "owner_name": "Heritage Homes Inc",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-11-20"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8667, 42.7881],
+          [-73.8665, 42.7881],
+          [-73.8665, 42.7879],
+          [-73.8667, 42.7879],
+          [-73.8667, 42.7881]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-69.2",
+        "year_built": 1948,
+        "address": "784 Troy Schenectady Road",
+        "owner_name": "Anderson Family",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-07-30"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8663, 42.7881],
+          [-73.8661, 42.7881],
+          [-73.8661, 42.7879],
+          [-73.8663, 42.7879],
+          [-73.8663, 42.7881]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-70.1",
+        "year_built": 1978,
+        "address": "15 Oak Street",
+        "owner_name": "Wilson LLC",
+        "building_type": "commercial",
+        "provenance": "county_assessor",
+        "last_updated": "2024-10-05"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8850, 42.8050],
+          [-73.8848, 42.8050],
+          [-73.8848, 42.8048],
+          [-73.8850, 42.8048],
+          [-73.8850, 42.8050]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-70.2",
+        "year_built": 1990,
+        "address": "19 Oak Street",
+        "owner_name": "Thompson Investments",
+        "building_type": "residential",
+        "provenance": "county_assessor",
+        "last_updated": "2024-09-18"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8846, 42.8050],
+          [-73.8844, 42.8050],
+          [-73.8844, 42.8048],
+          [-73.8846, 42.8048],
+          [-73.8846, 42.8050]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "123-45-71.1",
+        "year_built": 1885,
+        "address": "200 Main Street",
+        "owner_name": "Historic Preservation Society",
+        "building_type": "residential",
+        "provenance": "historic_register",
+        "last_updated": "2024-11-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-73.8920, 42.8100],
+          [-73.8918, 42.8100],
+          [-73.8918, 42.8098],
+          [-73.8920, 42.8098],
+          [-73.8920, 42.8100]
+        ]]
+      }
+    }
+  ]
+}
