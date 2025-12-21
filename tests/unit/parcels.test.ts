@@ -1,5 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { parseYearBuilt, normalizeParcelId, normalizeAddress, attachProvenance } from '../../scripts/fetch-parcels.mts';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Helper to load parcel index data
+let parcelIndexData: any = null;
+const getParcelIndexData = () => {
+  if (!parcelIndexData) {
+    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
+    parcelIndexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+  }
+  return parcelIndexData;
+};
 
 describe('parseYearBuilt', () => {
   it('should parse valid year as number', () => {
@@ -190,23 +202,15 @@ describe('attachProvenance', () => {
 });
 
 describe('Data validation - parcels_nys_index.json', () => {
-  it('should have at least 1 record', async () => {
-    const { readFileSync } = await import('fs');
-    const { join } = await import('path');
-    
-    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
-    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+  it('should have at least 1 record', () => {
+    const indexData = getParcelIndexData();
     const recordCount = Object.keys(indexData).length;
     
     expect(recordCount).toBeGreaterThan(0);
   });
 
-  it('should have records with valid provenance', async () => {
-    const { readFileSync } = await import('fs');
-    const { join } = await import('path');
-    
-    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
-    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+  it('should have records with valid provenance', () => {
+    const indexData = getParcelIndexData();
     
     const firstKey = Object.keys(indexData)[0];
     const firstRecord = indexData[firstKey];
@@ -217,12 +221,8 @@ describe('Data validation - parcels_nys_index.json', () => {
     expect(firstRecord.provenance.fetched_at).toBeDefined();
   });
 
-  it('should have a meaningful percentage of records with year_built', async () => {
-    const { readFileSync } = await import('fs');
-    const { join } = await import('path');
-    
-    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
-    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+  it('should have a meaningful percentage of records with year_built', () => {
+    const indexData = getParcelIndexData();
     
     const records = Object.values(indexData) as any[];
     const withYearBuilt = records.filter(r => r.year_built !== null && r.year_built !== undefined);
@@ -232,12 +232,8 @@ describe('Data validation - parcels_nys_index.json', () => {
     expect(percentage).toBeGreaterThan(0);
   });
 
-  it('should have year_built values within valid range when present', async () => {
-    const { readFileSync } = await import('fs');
-    const { join } = await import('path');
-    
-    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
-    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+  it('should have year_built values within valid range when present', () => {
+    const indexData = getParcelIndexData();
     
     const currentYear = new Date().getFullYear();
     const records = Object.values(indexData) as any[];

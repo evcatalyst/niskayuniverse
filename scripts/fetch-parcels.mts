@@ -136,7 +136,7 @@ export function normalizeAddress(address: string): string {
 
 /**
  * Attach provenance metadata to a record
- * Always fills source, fetched_at, and join_method
+ * Always fills source, source_url, and fetched_at
  */
 export function attachProvenance(
   source: string,

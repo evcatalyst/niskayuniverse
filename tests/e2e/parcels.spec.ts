@@ -92,13 +92,14 @@ test.describe('Parcel Age Example - E2E', () => {
     await page.goto('/examples/parcels-age.html', { waitUntil: 'domcontentloaded', timeout: 60000 });
     
     // Wait for map to initialize
+    // Note: Using fixed timeout since map loading is async and doesn't provide a ready event
     await page.waitForTimeout(2000);
     
     // Take a screenshot for visual regression testing
     await expect(page).toHaveScreenshot('parcels-age-map.png', {
       fullPage: false,
-      // Allow for rendering differences
-      maxDiffPixels: 500,
+      // Allow for minor rendering differences across environments
+      maxDiffPixels: 100,
     });
   });
 });
