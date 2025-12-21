@@ -56,6 +56,7 @@ Validation rules:
 The system integrates with New York State standardized parcel datasets to provide parcel geometry and Year Built enrichment:
 
 **Authoritative NYS Sources:**
+
 - [NYS Parcels Program](https://gis.ny.gov/parcels) – Download and web services landing page
 - [NYS Parcel Data Dictionary](https://gis.ny.gov/standardized-tax-parcel-data-dictionary) – Standardized schema and field definitions
 - [NYS Public Parcels MapServer](https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer) – 2024 parcel polygons (updated annually)
@@ -74,6 +75,7 @@ The parcel fetching process produces two normalized outputs in `public/data/`:
 
 **Join Strategy:**
 Service line records are joined to parcels using the following hierarchy:
+
 1. **Key match** – Direct parcel ID match (confidence: 1.0)
 2. **Address normalization** – Fuzzy address matching (confidence: 0.9)
 3. **Spatial join** – Centroid-in-polygon fallback (confidence: 0.7)

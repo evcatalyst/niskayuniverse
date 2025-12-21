@@ -35,6 +35,7 @@ npm run test:ui       # Run tests with UI
 ```
 
 Unit tests cover:
+
 - Year Built parsing and validation (1700-current year bounds)
 - Parcel ID normalization rules (SWIS_SBL_ID → SWIS_PRINT_KEY_ID → OBJECTID fallback)
 - Address normalization for matching
@@ -50,6 +51,7 @@ npm run test:e2e:ui   # Run E2E tests with UI
 ```
 
 E2E tests verify:
+
 - Parcel data files are accessible and have correct schema
 - Year Built values are within valid ranges
 - Parcel index structure is correct

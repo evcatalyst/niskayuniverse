@@ -2,15 +2,15 @@
 
 /**
  * Fetch and process NYS Tax Parcel data for Niskayuna area
- * 
+ *
  * Data Sources (NYS authoritative):
  * - NYS Parcels Program: https://gis.ny.gov/parcels
  * - NYS Parcel Data Dictionary: https://gis.ny.gov/standardized-tax-parcel-data-dictionary
  * - NYS Public Parcels MapServer: https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer
  */
 
-import { writeFileSync, mkdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, mkdirSync, readFileSync } from 'fs'
+import { join } from 'path'
 
 // Niskayuna town extent (approximate bounds in WGS84)
 const NISKAYUNA_BOUNDS = {
@@ -18,101 +18,102 @@ const NISKAYUNA_BOUNDS = {
   ymin: 42.75,
   xmax: -73.84,
   ymax: 42.85,
-};
+}
 
 // NYS SWIS code for Niskayuna (Schenectady County)
-const NISKAYUNA_SWIS = '4633'; // Town of Niskayuna
+const NISKAYUNA_SWIS = '4633' // Town of Niskayuna
 
-const NYS_PARCELS_MAPSERVER_URL = 'https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer';
-const PARCELS_LAYER_ID = 0; // Tax parcels layer
+const NYS_PARCELS_MAPSERVER_URL =
+  'https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer'
+const PARCELS_LAYER_ID = 0 // Tax parcels layer
 
 interface ParcelFeature {
-  type: 'Feature';
+  type: 'Feature'
   properties: {
-    parcel_id: string;
-    swis_code?: string;
-    swis_sbl_id?: string;
-    swis_print_key_id?: string;
-    year_built?: number | null;
-    owner_name?: string;
-    street_addr?: string;
-    city?: string;
-    zip?: string;
+    parcel_id: string
+    swis_code?: string
+    swis_sbl_id?: string
+    swis_print_key_id?: string
+    year_built?: number | null
+    owner_name?: string
+    street_addr?: string
+    city?: string
+    zip?: string
     provenance: {
-      source: string;
-      source_url: string;
-      fetched_at: string;
-      join_method?: 'key' | 'address' | 'spatial';
-      confidence?: number;
-    };
-  };
+      source: string
+      source_url: string
+      fetched_at: string
+      join_method?: 'key' | 'address' | 'spatial'
+      confidence?: number
+    }
+  }
   geometry: {
-    type: 'Polygon' | 'MultiPolygon';
-    coordinates: any;
-  };
+    type: 'Polygon' | 'MultiPolygon'
+    coordinates: any
+  }
 }
 
 interface ParcelIndex {
   [parcel_id: string]: {
-    parcel_id: string;
-    year_built?: number | null;
-    owner_name?: string;
-    address?: string;
-    swis_code?: string;
+    parcel_id: string
+    year_built?: number | null
+    owner_name?: string
+    address?: string
+    swis_code?: string
     provenance: {
-      source: string;
-      source_url: string;
-      fetched_at: string;
-    };
-  };
+      source: string
+      source_url: string
+      fetched_at: string
+    }
+  }
 }
 
 interface ServiceLineRecord {
-  street_address: string;
-  town: string;
-  zip: string;
-  road_side: string;
-  private_side: string;
+  street_address: string
+  town: string
+  zip: string
+  road_side: string
+  private_side: string
 }
 
 /**
  * Parse year built from various formats, ensuring valid range
  */
 export function parseYearBuilt(value: any): number | null {
-  if (!value) return null;
-  
+  if (!value) return null
+
   // Ensure we're working with a number
-  let year: number;
+  let year: number
   if (typeof value === 'string') {
-    year = parseInt(value, 10);
+    year = parseInt(value, 10)
   } else if (typeof value === 'number') {
-    year = Math.floor(value); // Ensure integer
+    year = Math.floor(value) // Ensure integer
   } else {
-    return null; // Invalid type
+    return null // Invalid type
   }
-  
-  if (isNaN(year)) return null;
-  
-  const currentYear = new Date().getFullYear();
-  if (year < 1700 || year > currentYear) return null;
-  
-  return year;
+
+  if (isNaN(year)) return null
+
+  const currentYear = new Date().getFullYear()
+  if (year < 1700 || year > currentYear) return null
+
+  return year
 }
 
 /**
  * Normalize parcel ID: prefer SWIS_SBL_ID, fallback to SWIS_PRINT_KEY_ID
  */
 export function normalizeParcelId(attributes: any): string {
-  const sblId = attributes.SWIS_SBL_ID || attributes.SBL_ID || attributes.SWISSBL;
-  const printKeyId = attributes.SWIS_PRINT_KEY_ID || attributes.PRINT_KEY;
-  const objectId = attributes.OBJECTID;
-  
-  if (sblId) return sblId;
-  if (printKeyId) return printKeyId;
-  if (objectId !== undefined && objectId !== null) return `PARCEL_${objectId}`;
-  
+  const sblId = attributes.SWIS_SBL_ID || attributes.SBL_ID || attributes.SWISSBL
+  const printKeyId = attributes.SWIS_PRINT_KEY_ID || attributes.PRINT_KEY
+  const objectId = attributes.OBJECTID
+
+  if (sblId) return sblId
+  if (printKeyId) return printKeyId
+  if (objectId !== undefined && objectId !== null) return `PARCEL_${objectId}`
+
   // Generate a random ID as final fallback for invalid data
-  return `PARCEL_${Math.random().toString(36).substring(2, 11)}`;
+  return `PARCEL_${Math.random().toString(36).substring(2, 11)}`
 }
 
 /**
@@ -131,36 +132,37 @@ export function normalizeAddress(address: string): string {
     .replace(/\bBOULEVARD\b/g, 'BLVD')
     .replace(/\bLANE\b/g, 'LN')
     .replace(/\bCOURT\b/g, 'CT')
-    .trim();
+    .trim()
 }
 
 /**
  * Check if point is inside polygon (simple ray casting algorithm)
  */
 function pointInPolygon(point: [number, number], polygon: number[][][]): boolean {
-  const [x, y] = point;
-  const ring = polygon[0]; // Use outer ring
-  
-  let inside = false;
+  const [x, y] = point
+  const ring = polygon[0] // Use outer ring
+
+  let inside = false
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], yi = ring[i][1];
-    const xj = ring[j][0], yj = ring[j][1];
-    
-    const intersect = ((yi > y) !== (yj > y))
-        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
+    const xi = ring[i][0],
+      yi = ring[i][1]
+    const xj = ring[j][0],
+      yj = ring[j][1]
+
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
+    if (intersect) inside = !inside
   }
-  
-  return inside;
+
+  return inside
 }
 
 /**
  * Fetch parcels from NYS MapServer via ArcGIS REST API
  */
 async function fetchParcels(): Promise<any> {
-  const { xmin, ymin, xmax, ymax } = NISKAYUNA_BOUNDS;
-  const geometry = `${xmin},${ymin},${xmax},${ymax}`;
-  
+  const { xmin, ymin, xmax, ymax } = NISKAYUNA_BOUNDS
+  const geometry = `${xmin},${ymin},${xmax},${ymax}`
+
   // Build query URL
   const params = new URLSearchParams({
     where: `SWIS_CODE = '${NISKAYUNA_SWIS}'`,
@@ -172,31 +174,31 @@ async function fetchParcels(): Promise<any> {
     returnGeometry: 'true',
     outSR: '4326', // WGS84 output
     f: 'geojson', // Try GeoJSON first
-  });
-  
-  const url = `${NYS_PARCELS_MAPSERVER_URL}/${PARCELS_LAYER_ID}/query?${params}`;
-  
-  console.log('Fetching parcels from NYS MapServer...');
-  console.log('Query URL:', url);
-  
-  const response = await fetch(url);
-  
+  })
+
+  const url = `${NYS_PARCELS_MAPSERVER_URL}/${PARCELS_LAYER_ID}/query?${params}`
+
+  console.log('Fetching parcels from NYS MapServer...')
+  console.log('Query URL:', url)
+
+  const response = await fetch(url)
+
   if (!response.ok) {
     // Fallback: try with Esri JSON format
-    params.set('f', 'json');
-    const fallbackUrl = `${NYS_PARCELS_MAPSERVER_URL}/${PARCELS_LAYER_ID}/query?${params}`;
-    console.log('GeoJSON not supported, trying Esri JSON format...');
-    
-    const fallbackResponse = await fetch(fallbackUrl);
+    params.set('f', 'json')
+    const fallbackUrl = `${NYS_PARCELS_MAPSERVER_URL}/${PARCELS_LAYER_ID}/query?${params}`
+    console.log('GeoJSON not supported, trying Esri JSON format...')
+
+    const fallbackResponse = await fetch(fallbackUrl)
     if (!fallbackResponse.ok) {
-      throw new Error(`Failed to fetch parcels: ${fallbackResponse.status}`);
+      throw new Error(`Failed to fetch parcels: ${fallbackResponse.status}`)
     }
-    
-    const esriData = await fallbackResponse.json();
-    return convertEsriJsonToGeoJson(esriData);
+
+    const esriData = await fallbackResponse.json()
+    return convertEsriJsonToGeoJson(esriData)
   }
-  
-  return response.json();
+
+  return response.json()
 }
 
 /**
@@ -207,62 +209,64 @@ function convertEsriJsonToGeoJson(esriData: any): any {
     return {
       type: 'FeatureCollection',
       features: [],
-    };
-  }
-  
-  const features = esriData.features.map((feature: any) => {
-    const geometry = feature.geometry;
-    let geoJsonGeometry;
-    
-    if (geometry.rings) {
-      // Polygon
-      geoJsonGeometry = {
-        type: 'Polygon',
-        coordinates: geometry.rings,
-      };
-    } else if (geometry.x && geometry.y) {
-      // Point
-      geoJsonGeometry = {
-        type: 'Point',
-        coordinates: [geometry.x, geometry.y],
-      };
-    } else {
-      return null;
     }
-    
-    return {
-      type: 'Feature',
-      properties: feature.attributes,
-      geometry: geoJsonGeometry,
-    };
-  }).filter(Boolean);
-  
+  }
+
+  const features = esriData.features
+    .map((feature: any) => {
+      const geometry = feature.geometry
+      let geoJsonGeometry
+
+      if (geometry.rings) {
+        // Polygon
+        geoJsonGeometry = {
+          type: 'Polygon',
+          coordinates: geometry.rings,
+        }
+      } else if (geometry.x && geometry.y) {
+        // Point
+        geoJsonGeometry = {
+          type: 'Point',
+          coordinates: [geometry.x, geometry.y],
+        }
+      } else {
+        return null
+      }
+
+      return {
+        type: 'Feature',
+        properties: feature.attributes,
+        geometry: geoJsonGeometry,
+      }
+    })
+    .filter(Boolean)
+
   return {
     type: 'FeatureCollection',
     features,
-  };
+  }
 }
 
 /**
  * Load and parse service line CSV data
  */
 function loadServiceLines(): ServiceLineRecord[] {
-  const csvPath = join(process.cwd(), 'niskayuna_service_lines_full.csv');
-  const csvContent = readFileSync(csvPath, 'utf-8');
-  
-  const lines = csvContent.trim().split('\n');
-  const headers = lines[0].split(',');
-  
-  return lines.slice(1).map(line => {
-    const values = line.split(',');
+  const csvPath = join(process.cwd(), 'niskayuna_service_lines_full.csv')
+  const csvContent = readFileSync(csvPath, 'utf-8')
+
+  const lines = csvContent.trim().split('\n')
+  const headers = lines[0].split(',')
+
+  return lines.slice(1).map((line) => {
+    const values = line.split(',')
     return {
       street_address: values[0] || '',
       town: values[1] || '',
       zip: values[2] || '',
       road_side: values[3] || '',
       private_side: values[4] || '',
-    };
-  });
+    }
+  })
 }
 
 /**
@@ -272,9 +276,9 @@ function joinParcelsToServiceLines(
   parcels: any,
   serviceLines: ServiceLineRecord[]
 ): { geojson: any; index: ParcelIndex; stats: any } {
-  const features: ParcelFeature[] = [];
-  const index: ParcelIndex = {};
-  
+  const features: ParcelFeature[] = []
+  const index: ParcelIndex = {}
+
   const stats = {
     total: 0,
     withYearBuilt: 0,
@@ -283,54 +287,55 @@ function joinParcelsToServiceLines(
     joinedBySpatial: 0,
     notJoined: 0,
     yearBuiltRange: { min: Infinity, max: -Infinity },
-  };
-  
-  const normalizedServiceLines = serviceLines.map(sl => ({
+  }
+
+  const normalizedServiceLines = serviceLines.map((sl) => ({
     ...sl,
     normalizedAddress: normalizeAddress(sl.street_address),
-  }));
-  
+  }))
+
   for (const feature of parcels.features) {
-    stats.total++;
-    
-    const attrs = feature.properties;
-    const parcelId = normalizeParcelId(attrs);
-    const yearBuilt = parseYearBuilt(attrs.YR_BLT || attrs.YEAR_BUILT || attrs.YEARBUILT);
-    
+    stats.total++
+
+    const attrs = feature.properties
+    const parcelId = normalizeParcelId(attrs)
+    const yearBuilt = parseYearBuilt(attrs.YR_BLT || attrs.YEAR_BUILT || attrs.YEARBUILT)
+
     if (yearBuilt) {
-      stats.withYearBuilt++;
-      stats.yearBuiltRange.min = Math.min(stats.yearBuiltRange.min, yearBuilt);
-      stats.yearBuiltRange.max = Math.max(stats.yearBuiltRange.max, yearBuilt);
+      stats.withYearBuilt++
+      stats.yearBuiltRange.min = Math.min(stats.yearBuiltRange.min, yearBuilt)
+      stats.yearBuiltRange.max = Math.max(stats.yearBuiltRange.max, yearBuilt)
     }
-    
+
     // Try to join to service lines
-    let joinMethod: 'key' | 'address' | 'spatial' | undefined;
-    let confidence = 1.0;
-    
+    let joinMethod: 'key' | 'address' | 'spatial' | undefined
+    let confidence = 1.0
+
     // Method 1: Try exact key match (if we had parcel IDs in service line data)
     // For now, we'll use address matching
-    
+
     // Method 2: Address matching
-    const parcelAddress = attrs.STREET_ADDR || attrs.STREET_ADDRESS || attrs.ADDRESS || '';
-    const normalizedParcelAddr = normalizeAddress(parcelAddress);
-    
-    const addressMatch = normalizedServiceLines.find(sl => 
-      sl.normalizedAddress && 
-      normalizedParcelAddr && 
-      sl.normalizedAddress === normalizedParcelAddr
-    );
-    
+    const parcelAddress = attrs.STREET_ADDR || attrs.STREET_ADDRESS || attrs.ADDRESS || ''
+    const normalizedParcelAddr = normalizeAddress(parcelAddress)
+
+    const addressMatch = normalizedServiceLines.find(
+      (sl) =>
+        sl.normalizedAddress &&
+        normalizedParcelAddr &&
+        sl.normalizedAddress === normalizedParcelAddr
+    )
+
     if (addressMatch) {
-      joinMethod = 'address';
-      confidence = 0.9;
-      stats.joinedByAddress++;
+      joinMethod = 'address'
+      confidence = 0.9
+      stats.joinedByAddress++
     } else {
       // Method 3: Spatial join (for service lines with coordinates)
       // This is a fallback - we'd need geocoded service line data
       // For now, mark as not joined
-      stats.notJoined++;
+      stats.notJoined++
     }
-    
+
     const normalizedFeature: ParcelFeature = {
       type: 'Feature',
       properties: {
@@ -352,10 +357,10 @@ function joinParcelsToServiceLines(
         },
       },
       geometry: feature.geometry,
-    };
-    
-    features.push(normalizedFeature);
-    
+    }
+
+    features.push(normalizedFeature)
+
     // Add to index
     index[parcelId] = {
       parcel_id: parcelId,
@@ -368,9 +373,9 @@ function joinParcelsToServiceLines(
         source_url: normalizedFeature.properties.provenance.source_url,
         fetched_at: normalizedFeature.properties.provenance.fetched_at,
       },
-    };
+    }
   }
-  
+
   return {
     geojson: {
       type: 'FeatureCollection',
@@ -384,41 +389,43 @@ function joinParcelsToServiceLines(
     },
     index,
     stats,
-  };
+  }
 }
 
 /**
  * Validate the processed data
  */
 function validateData(stats: any, totalServiceLines: number): void {
-  console.log('\n=== Validation Report ===');
-  console.log(`Total parcels fetched: ${stats.total}`);
-  console.log(`Parcels with year_built: ${stats.withYearBuilt} (${((stats.withYearBuilt / stats.total) * 100).toFixed(1)}%)`);
-  
+  console.log('\n=== Validation Report ===')
+  console.log(`Total parcels fetched: ${stats.total}`)
+  console.log(
+    `Parcels with year_built: ${stats.withYearBuilt} (${((stats.withYearBuilt / stats.total) * 100).toFixed(1)}%)`
+  )
+
   if (stats.withYearBuilt > 0) {
-    console.log(`Year built range: ${stats.yearBuiltRange.min} - ${stats.yearBuiltRange.max}`);
-    
+    console.log(`Year built range: ${stats.yearBuiltRange.min} - ${stats.yearBuiltRange.max}`)
+
     // Sanity check
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear()
     if (stats.yearBuiltRange.min < 1700 || stats.yearBuiltRange.max > currentYear) {
-      console.warn('⚠️  Warning: Year built values outside expected range (1700-current)');
+      console.warn('⚠️  Warning: Year built values outside expected range (1700-current)')
     }
   }
-  
-  console.log(`\nJoin Statistics:`);
-  console.log(`  - Joined by key: ${stats.joinedByKey}`);
-  console.log(`  - Joined by address: ${stats.joinedByAddress}`);
-  console.log(`  - Joined by spatial: ${stats.joinedBySpatial}`);
-  console.log(`  - Not joined: ${stats.notJoined}`);
-  
-  const totalJoined = stats.joinedByKey + stats.joinedByAddress + stats.joinedBySpatial;
-  const joinCoverage = totalServiceLines > 0 
-    ? (totalJoined / totalServiceLines) * 100 
-    : 0;
-  console.log(`  - Join coverage: ${totalJoined}/${totalServiceLines} service lines (${joinCoverage.toFixed(1)}%)`);
-  
-  console.log(`\nCRS: EPSG:4326 (WGS84) - suitable for web mapping`);
-  console.log('=========================\n');
+
+  console.log(`\nJoin Statistics:`)
+  console.log(`  - Joined by key: ${stats.joinedByKey}`)
+  console.log(`  - Joined by address: ${stats.joinedByAddress}`)
+  console.log(`  - Joined by spatial: ${stats.joinedBySpatial}`)
+  console.log(`  - Not joined: ${stats.notJoined}`)
+
+  const totalJoined = stats.joinedByKey + stats.joinedByAddress + stats.joinedBySpatial
+  const joinCoverage = totalServiceLines > 0 ? (totalJoined / totalServiceLines) * 100 : 0
+  console.log(
+    `  - Join coverage: ${totalJoined}/${totalServiceLines} service lines (${joinCoverage.toFixed(1)}%)`
+  )
+
+  console.log(`\nCRS: EPSG:4326 (WGS84) - suitable for web mapping`)
+  console.log('=========================\n')
 }
 
 /**
@@ -426,52 +433,51 @@ function validateData(stats: any, totalServiceLines: number): void {
  */
 async function main() {
   try {
-    console.log('Starting NYS parcel data fetch for Niskayuna...\n');
-    
+    console.log('Starting NYS parcel data fetch for Niskayuna...\n')
+
     // Fetch parcel data
-    const parcelsData = await fetchParcels();
-    console.log(`Fetched ${parcelsData.features?.length || 0} parcel features\n`);
-    
+    const parcelsData = await fetchParcels()
+    console.log(`Fetched ${parcelsData.features?.length || 0} parcel features\n`)
+
     if (!parcelsData.features || parcelsData.features.length === 0) {
-      console.warn('⚠️  No parcels returned from the query. Check SWIS code or bounds.');
-      process.exit(0);
+      console.warn('⚠️  No parcels returned from the query. Check SWIS code or bounds.')
+      process.exit(0)
     }
-    
+
     // Load service line data
-    console.log('Loading service line data...');
-    const serviceLines = loadServiceLines();
-    console.log(`Loaded ${serviceLines.length} service line records\n`);
-    
+    console.log('Loading service line data...')
+    const serviceLines = loadServiceLines()
+    console.log(`Loaded ${serviceLines.length} service line records\n`)
+
     // Join and normalize
-    console.log('Joining parcels to service lines...');
-    const { geojson, index, stats } = joinParcelsToServiceLines(parcelsData, serviceLines);
-    
+    console.log('Joining parcels to service lines...')
+    const { geojson, index, stats } = joinParcelsToServiceLines(parcelsData, serviceLines)
+
     // Validate
-    validateData(stats, serviceLines.length);
-    
+    validateData(stats, serviceLines.length)
+
     // Ensure output directory exists
-    const outputDir = join(process.cwd(), 'public', 'data');
-    mkdirSync(outputDir, { recursive: true });
-    
+    const outputDir = join(process.cwd(), 'public', 'data')
+    mkdirSync(outputDir, { recursive: true })
+
     // Write GeoJSON
-    const geojsonPath = join(outputDir, 'parcels_nys.geojson');
-    writeFileSync(geojsonPath, JSON.stringify(geojson, null, 2));
-    console.log(`✓ Written: ${geojsonPath}`);
-    
+    const geojsonPath = join(outputDir, 'parcels_nys.geojson')
+    writeFileSync(geojsonPath, JSON.stringify(geojson, null, 2))
+    console.log(`✓ Written: ${geojsonPath}`)
+
     // Write index
-    const indexPath = join(outputDir, 'parcels_nys_index.json');
-    writeFileSync(indexPath, JSON.stringify(index, null, 2));
-    console.log(`✓ Written: ${indexPath}`);
-    
-    console.log('\n✅ Parcel data fetch complete!');
-    
+    const indexPath = join(outputDir, 'parcels_nys_index.json')
+    writeFileSync(indexPath, JSON.stringify(index, null, 2))
+    console.log(`✓ Written: ${indexPath}`)
+
+    console.log('\n✅ Parcel data fetch complete!')
   } catch (error) {
-    console.error('❌ Error fetching parcel data:', error);
-    process.exit(1);
+    console.error('❌ Error fetching parcel data:', error)
+    process.exit(1)
   }
 }
 
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+  main()
 }
