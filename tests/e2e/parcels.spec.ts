@@ -86,3 +86,20 @@ test.describe('Parcel Layer', () => {
     expect(criticalErrors).toHaveLength(0);
   });
 });
+
+test.describe('Parcel Age Example - E2E', () => {
+  test('visual regression - parcel map snapshot', async ({ page }) => {
+    await page.goto('/examples/parcels-age.html', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    
+    // Wait for map initialization - using a short fixed timeout is acceptable here
+    // since map loading is truly async without a reliable ready signal
+    await page.waitForTimeout(2000);
+    
+    // Take a screenshot for visual regression testing
+    await expect(page).toHaveScreenshot('parcels-age-map.png', {
+      fullPage: false,
+      // Allow for minor rendering differences across environments
+      maxDiffPixels: 100,
+    });
+  });
+});
