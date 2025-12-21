@@ -9,10 +9,7 @@
     "verified": false,
     "confidence": 0.85,
     "last_verified": "2024-11-26",
-    "position": [
-      -73.8647668,
-      42.7712273
-    ],
+    "position": [-73.8647668, 42.7712273],
     "geocode_source": "nominatim",
     "geocode_confidence": 1
   },
@@ -26,10 +23,7 @@
     "verified": true,
     "confidence": 0.8,
     "last_verified": "2025-08-02",
-    "position": [
-      -73.8647456,
-      42.7715397
-    ],
+    "position": [-73.8647456, 42.7715397],
     "geocode_source": "nominatim",
     "geocode_confidence": 1
   },
@@ -43,10 +37,7 @@
     "verified": true,
     "confidence": 0.71,
     "last_verified": "2025-09-02",
-    "position": [
-      -73.8643965,
-      42.7718093
-    ],
+    "position": [-73.8643965, 42.7718093],
     "geocode_source": "nominatim",
     "geocode_confidence": 1
   }

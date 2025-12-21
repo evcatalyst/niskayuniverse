@@ -10,26 +10,26 @@
  */
 export function parseYearBuilt(value) {
   if (value == null || value === '') {
-    return null;
+    return null
   }
 
-  const parsed = parseInt(value, 10);
-  
+  const parsed = parseInt(value, 10)
+
   // Check if parsing failed
   if (isNaN(parsed)) {
-    return null;
+    return null
   }
 
   // Reasonable range: 1600 to current year + 5 (for planned construction)
-  const currentYear = new Date().getFullYear();
-  const MIN_YEAR = 1600;
-  const MAX_YEAR = currentYear + 5;
+  const currentYear = new Date().getFullYear()
+  const MIN_YEAR = 1600
+  const MAX_YEAR = currentYear + 5
 
   if (parsed < MIN_YEAR || parsed > MAX_YEAR) {
-    return null;
+    return null
   }
 
-  return parsed;
+  return parsed
 }
 
 /**
@@ -39,20 +39,20 @@ export function parseYearBuilt(value) {
  */
 export function normalizeParcelId(parcel) {
   if (!parcel) {
-    return null;
+    return null
   }
 
   // Prioritize SWIS_SBL_ID
   if (parcel.SWIS_SBL_ID && parcel.SWIS_SBL_ID.trim() !== '') {
-    return parcel.SWIS_SBL_ID.trim();
+    return parcel.SWIS_SBL_ID.trim()
   }
 
   // Fallback to SWIS_PRINT_KEY_ID
   if (parcel.SWIS_PRINT_KEY_ID && parcel.SWIS_PRINT_KEY_ID.trim() !== '') {
-    return parcel.SWIS_PRINT_KEY_ID.trim();
+    return parcel.SWIS_PRINT_KEY_ID.trim()
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -66,11 +66,11 @@ export function normalizeParcelId(parcel) {
  */
 export function attachProvenance(parcel, options = {}) {
   if (!parcel || typeof parcel !== 'object') {
-    throw new Error('Parcel must be a valid object');
+    throw new Error('Parcel must be a valid object')
   }
 
   if (!options.source) {
-    throw new Error('Source is required for provenance');
+    throw new Error('Source is required for provenance')
   }
 
   return {
@@ -78,5 +78,5 @@ export function attachProvenance(parcel, options = {}) {
     source: options.source,
     fetched_at: new Date().toISOString(),
     join_method: options.join_method || 'direct',
-  };
+  }
 }

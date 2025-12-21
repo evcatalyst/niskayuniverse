@@ -1,5 +1,5 @@
-import { Deck } from 'https://unpkg.com/deck.gl@8.9.0/dist.min.js';
-import { ScatterplotLayer } from 'https://unpkg.com/deck.gl@8.9.0/dist.min.js';
+import { Deck } from 'https://unpkg.com/deck.gl@8.9.0/dist.min.js'
+import { ScatterplotLayer } from 'https://unpkg.com/deck.gl@8.9.0/dist.min.js'
 
 const config = {
   palette: 'palette-okabe',
@@ -19,22 +19,24 @@ const config = {
   lodCityStyle: 'halo',
   lodNhoodStyle: 'nested',
   lodParcelStyle: 'split',
-  tooltipFields: ['address', 'private_type', 'public_type']
-};
+  tooltipFields: ['address', 'private_type', 'public_type'],
+}
 
-let deck;
-let data = [];
+let deck
+let data = []
 
 async function init() {
   // Load data
   try {
-    const response = await fetch('https://raw.githubusercontent.com/evcatalyst/niskayuniverse/main/data/markers.json');
-    let data = await response.json();
+    const response = await fetch(
+      'https://raw.githubusercontent.com/evcatalyst/niskayuniverse/main/data/markers.json'
+    )
+    let data = await response.json()
 
     // Limit to first 500 markers for performance
-    data = data.slice(0, 500);
+    data = data.slice(0, 500)
   } catch (error) {
-    console.error('Failed to load markers:', error);
+    console.error('Failed to load markers:', error)
     // Fallback data
     data = [
       {
@@ -45,57 +47,62 @@ async function init() {
         verified: true,
         confidence: 0.85,
         last_verified: '2024-11-12',
-        position: [-74.5, 40]
-      }
-    ];
+        position: [-74.5, 40],
+      },
+    ]
   }
 
   // Ensure all data has positions
   data.forEach((d, i) => {
     if (!d.position) {
-      d.position = [-73.85 + (Math.random() - 0.5) * 0.1, 42.78 + (Math.random() - 0.5) * 0.1];
+      d.position = [-73.85 + (Math.random() - 0.5) * 0.1, 42.78 + (Math.random() - 0.5) * 0.1]
     }
-  });
+  })
 
   deck = new Deck({
     container: 'container',
     initialViewState: {
       longitude: -73.85,
       latitude: 42.78,
-      zoom: 13
+      zoom: 13,
     },
     controller: true,
-    layers: [createLayer()]
-  });
+    layers: [createLayer()],
+  })
 }
 
 function createLayer() {
   return new ScatterplotLayer({
     id: 'service-markers',
     data,
-    getPosition: d => d.position,
+    getPosition: (d) => d.position,
     getRadius: config.tokenSize / 2,
-    getFillColor: d => getColor(d.public_type),
+    getFillColor: (d) => getColor(d.public_type),
     stroked: true,
-    getLineColor: d => getColor(d.private_type),
+    getLineColor: (d) => getColor(d.private_type),
     getLineWidth: 2,
     pickable: true,
     onHover: ({ object }) => {
       if (object) {
-        console.log(object.address, object.private_type, object.public_type);
+        console.log(object.address, object.private_type, object.public_type)
       }
-    }
-  });
+    },
+  })
 }
 
 function getColor(material) {
   switch (material) {
-    case 'lead': return [213, 94, 0];
-    case 'copper': return [0, 158, 115];
-    case 'galvanized': return [0, 114, 178];
-    case 'plastic': return [204, 121, 167];
-    default: return [189, 189, 189];
+    case 'lead':
+      return [213, 94, 0]
+    case 'copper':
+      return [0, 158, 115]
+    case 'galvanized':
+      return [0, 114, 178]
+    case 'plastic':
+      return [204, 121, 167]
+    default:
+      return [189, 189, 189]
   }
 }
 
-init();
+init()

@@ -76,6 +76,14 @@
       "type": "boolean"
     }
   },
-  "required": ["palette", "tokenSize", "ringInset", "patterns", "pulseLead", "dashedUnknown", "style"],
+  "required": [
+    "palette",
+    "tokenSize",
+    "ringInset",
+    "patterns",
+    "pulseLead",
+    "dashedUnknown",
+    "style"
+  ],
   "additionalProperties": false
 }

@@ -1,46 +1,85 @@
 <!doctype html>
 <html lang="en" data-base-path="/niskayuniverse/">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Leaflet example | Water Atlas</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    body { margin: 0; font-family: system-ui, sans-serif; }
-    #map { width: 100vw; height: 100vh; }
-    .badge { background:#0ea5e9; color:#fff; padding:6px 10px; border-radius:999px; position:absolute; top:12px; left:12px; z-index:999; box-shadow:0 8px 22px rgba(14,165,233,0.35);}
-  </style>
-</head>
-<body>
-  <div class="badge">Demo data is loaded from <code>/public/data</code></div>
-  <div id="map"></div>
-  <script>
-    const baseFromDir = new URL('.', document.baseURI).pathname;
-    const rawBase = document.documentElement.dataset.basePath || baseFromDir;
-    const basePath = rawBase.replace(/examples\/?$/, '');
-    const originBase = `${window.location.origin}${basePath}`;
-    const serviceLinesUrl = new URL('data/service_lines.geojson', originBase).pathname;
-    const submissionsUrl = new URL('data/submissions.json', originBase).pathname;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leaflet example | Water Atlas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      #map {
+        width: 100vw;
+        height: 100vh;
+      }
+      .badge {
+        background: #0ea5e9;
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 999px;
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 999;
+        box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="badge">Demo data is loaded from <code>/public/data</code></div>
+    <div id="map"></div>
+    <script>
+      const baseFromDir = new URL('.', document.baseURI).pathname
+      const rawBase = document.documentElement.dataset.basePath || baseFromDir
+      const basePath = rawBase.replace(/examples\/?$/, '')
+      const originBase = `${window.location.origin}${basePath}`
+      const serviceLinesUrl = new URL('data/service_lines.geojson', originBase).pathname
+      const submissionsUrl = new URL('data/submissions.json', originBase).pathname
 
-    const map = L.map('map').setView([42.8073, -73.8945], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+      const map = L.map('map').setView([42.8073, -73.8945], 13)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map)
 
-    fetch(serviceLinesUrl).then((res) => res.json()).then((geojson) => {
-      L.geoJSON(geojson, {
-        pointToLayer: (_, latlng) => L.circleMarker(latlng, { radius: 7, color: '#0ea5e9', weight: 2, fillColor: '#0ea5e9', fillOpacity: 0.7 }),
-        onEachFeature: (feature, layer) => layer.bindPopup(feature.properties?.address || 'Service line'),
-      }).addTo(map);
-    }).catch((err) => console.error('Service line load failed', err));
+      fetch(serviceLinesUrl)
+        .then((res) => res.json())
+        .then((geojson) => {
+          L.geoJSON(geojson, {
+            pointToLayer: (_, latlng) =>
+              L.circleMarker(latlng, {
+                radius: 7,
+                color: '#0ea5e9',
+                weight: 2,
+                fillColor: '#0ea5e9',
+                fillOpacity: 0.7,
+              }),
+            onEachFeature: (feature, layer) =>
+              layer.bindPopup(feature.properties?.address || 'Service line'),
+          }).addTo(map)
+        })
+        .catch((err) => console.error('Service line load failed', err))
 
-    fetch(submissionsUrl).then((res) => res.json()).then((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.coordinates) return;
-        L.circleMarker([entry.coordinates.lat, entry.coordinates.lng], { radius: 5, color: '#f97316', weight: 2, fillColor: '#f97316', fillOpacity: 0.8 })
-          .bindPopup(entry.address)
-          .addTo(map);
-      });
-    }).catch((err) => console.error('Submissions load failed', err));
-  </script>
-</body>
+      fetch(submissionsUrl)
+        .then((res) => res.json())
+        .then((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.coordinates) return
+            L.circleMarker([entry.coordinates.lat, entry.coordinates.lng], {
+              radius: 5,
+              color: '#f97316',
+              weight: 2,
+              fillColor: '#f97316',
+              fillOpacity: 0.8,
+            })
+              .bindPopup(entry.address)
+              .addTo(map)
+          })
+        })
+        .catch((err) => console.error('Submissions load failed', err))
+    </script>
+  </body>
 </html>

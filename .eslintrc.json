@@ -15,11 +15,7 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint",
-    "react",
-    "jsx-a11y"
-  ],
+  "plugins": ["@typescript-eslint", "react", "jsx-a11y"],
   "rules": {
     "react/prop-types": "off"
   },
@@ -28,10 +24,5 @@
       "version": "detect"
     }
   },
-  "ignorePatterns": [
-    "dist/**",
-    "assets/**",
-    "public/examples/**",
-    "node_modules/**"
-  ]
+  "ignorePatterns": ["dist/**", "assets/**", "public/examples/**", "node_modules/**"]
 }

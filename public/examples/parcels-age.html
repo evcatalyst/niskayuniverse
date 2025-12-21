@@ -1,281 +1,279 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parcel Age Visualization - Niskayuna</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parcel Age Visualization - Niskayuna</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
 
-    header {
-      background: #2c3e50;
-      color: white;
-      padding: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
+      header {
+        background: #2c3e50;
+        color: white;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
 
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
 
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 0.5rem;
-    }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 0.5rem;
+      }
 
-    .toggle-container {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
 
-    .toggle-switch {
-      position: relative;
-      width: 50px;
-      height: 24px;
-    }
+      .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+      }
 
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 24px;
-    }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
 
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 16px;
-      width: 16px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
+      .slider:before {
+        position: absolute;
+        content: '';
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
 
-    input:checked + .slider {
-      background-color: #3498db;
-    }
+      input:checked + .slider {
+        background-color: #3498db;
+      }
 
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
 
-    #map {
-      flex: 1;
-      width: 100%;
-    }
+      #map {
+        flex: 1;
+        width: 100%;
+      }
 
-    .legend {
-      background: white;
-      padding: 1rem;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      font-size: 0.875rem;
-    }
+      .legend {
+        background: white;
+        padding: 1rem;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-size: 0.875rem;
+      }
 
-    .legend h3 {
-      margin-bottom: 0.5rem;
-      font-size: 1rem;
-    }
+      .legend h3 {
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+      }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.25rem;
-    }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
 
-    .legend-color {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 2px solid rgba(0,0,0,0.2);
-    }
+      .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 0, 0, 0.2);
+      }
 
-    .stats {
-      background: white;
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      color: #666;
-    }
+      .stats {
+        background: white;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: #666;
+      }
 
-    #parcel-count {
-      font-weight: bold;
-      color: #3498db;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Parcel Age Visualization</h1>
-    <div class="controls">
-      <div class="toggle-container">
-        <label class="toggle-switch">
-          <input type="checkbox" id="parcels-toggle" checked>
-          <span class="slider"></span>
-        </label>
-        <label for="parcels-toggle">Show Parcels</label>
+      #parcel-count {
+        font-weight: bold;
+        color: #3498db;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Parcel Age Visualization</h1>
+      <div class="controls">
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input type="checkbox" id="parcels-toggle" checked />
+            <span class="slider"></span>
+          </label>
+          <label for="parcels-toggle">Show Parcels</label>
+        </div>
+        <div class="legend">
+          <h3>Building Age</h3>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #e74c3c"></div>
+            <span>Pre-1900</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #f39c12"></div>
+            <span>1900-1950</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #3498db"></div>
+            <span>1950-2000</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #2ecc71"></div>
+            <span>2000+</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #95a5a6"></div>
+            <span>Unknown</span>
+          </div>
+        </div>
       </div>
-      <div class="legend">
-        <h3>Building Age</h3>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #e74c3c;"></div>
-          <span>Pre-1900</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #f39c12;"></div>
-          <span>1900-1950</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #3498db;"></div>
-          <span>1950-2000</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #2ecc71;"></div>
-          <span>2000+</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #95a5a6;"></div>
-          <span>Unknown</span>
-        </div>
-      </div>
-    </div>
-  </header>
-  
-  <div class="stats">
-    Displaying <span id="parcel-count">0</span> parcels
-  </div>
+    </header>
 
-  <div id="map"></div>
+    <div class="stats">Displaying <span id="parcel-count">0</span> parcels</div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // Initialize map
-    const map = L.map('map').setView([42.78, -73.85], 13);
+    <div id="map"></div>
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map);
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // Initialize map
+      const map = L.map('map').setView([42.78, -73.85], 13);
 
-    // Layer group for parcels
-    let parcelLayer = L.layerGroup().addTo(map);
-    let parcelsData = [];
-    
-    // Expose for testing
-    (window as any).parcelLayer = parcelLayer;
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
 
-    // Get color based on year built
-    function getColorForYear(year) {
-      if (!year) return '#95a5a6'; // gray for unknown
-      if (year < 1900) return '#e74c3c'; // red
-      if (year < 1950) return '#f39c12'; // orange
-      if (year < 2000) return '#3498db'; // blue
-      return '#2ecc71'; // green
-    }
+      // Layer group for parcels
+      let parcelLayer = L.layerGroup().addTo(map);
+      let parcelsData = [];
 
-    // Create marker for parcel
-    function createParcelMarker(parcel) {
-      const color = getColorForYear(parcel.year_built);
-      const marker = L.circleMarker([parcel.latitude, parcel.longitude], {
-        radius: 6,
-        fillColor: color,
-        color: '#fff',
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.7
+      // Expose for testing
+      (window as any).parcelLayer = parcelLayer;
+
+      // Get color based on year built
+      function getColorForYear(year) {
+        if (!year) return '#95a5a6'; // gray for unknown
+        if (year < 1900) return '#e74c3c'; // red
+        if (year < 1950) return '#f39c12'; // orange
+        if (year < 2000) return '#3498db'; // blue
+        return '#2ecc71'; // green
+      }
+
+      // Create marker for parcel
+      function createParcelMarker(parcel) {
+        const color = getColorForYear(parcel.year_built);
+        const marker = L.circleMarker([parcel.latitude, parcel.longitude], {
+          radius: 6,
+          fillColor: color,
+          color: '#fff',
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.7
+        });
+
+        const yearText = parcel.year_built ? parcel.year_built : 'Unknown';
+        marker.bindPopup(`
+          <strong>${parcel.street_address}</strong><br>
+          Year Built: ${yearText}<br>
+          Owner: ${parcel.owner_name}<br>
+          Value: $${parcel.total_value?.toLocaleString() || 'N/A'}
+        `);
+
+        return marker;
+      }
+
+      // Update parcel display
+      function updateParcels(show) {
+        parcelLayer.clearLayers();
+
+        if (show && parcelsData.length > 0) {
+          parcelsData.forEach(parcel => {
+            const marker = createParcelMarker(parcel);
+            parcelLayer.addLayer(marker);
+          });
+        }
+
+        updateParcelCount(show ? parcelsData.length : 0);
+      }
+
+      // Update parcel count display
+      function updateParcelCount(count) {
+        document.getElementById('parcel-count').textContent = count;
+      }
+
+      // Load parcel data
+      async function loadParcels() {
+        try {
+          // Determine base path (works for both local dev and GitHub Pages)
+          const basePath = document.querySelector('base')?.getAttribute('href') || '/niskayuniverse/';
+          const dataPath = `${basePath}data/parcels_nys_index.json`.replace(/\/+/g, '/');
+
+          const response = await fetch(dataPath);
+          if (!response.ok) {
+            throw new Error(`Failed to load parcels: ${response.status}`);
+          }
+
+          parcelsData = await response.json();
+          console.log(`Loaded ${parcelsData.length} parcels`);
+
+          // Initial display
+          const toggle = document.getElementById('parcels-toggle');
+          updateParcels(toggle.checked);
+
+        } catch (error) {
+          console.error('Error loading parcels:', error);
+          alert('Failed to load parcel data. Please ensure parcels_nys_index.json exists.');
+        }
+      }
+
+      // Toggle event listener
+      document.getElementById('parcels-toggle').addEventListener('change', (e) => {
+        updateParcels(e.target.checked);
       });
 
-      const yearText = parcel.year_built ? parcel.year_built : 'Unknown';
-      marker.bindPopup(`
-        <strong>${parcel.street_address}</strong><br>
-        Year Built: ${yearText}<br>
-        Owner: ${parcel.owner_name}<br>
-        Value: $${parcel.total_value?.toLocaleString() || 'N/A'}
-      `);
-
-      return marker;
-    }
-
-    // Update parcel display
-    function updateParcels(show) {
-      parcelLayer.clearLayers();
-      
-      if (show && parcelsData.length > 0) {
-        parcelsData.forEach(parcel => {
-          const marker = createParcelMarker(parcel);
-          parcelLayer.addLayer(marker);
-        });
-      }
-
-      updateParcelCount(show ? parcelsData.length : 0);
-    }
-
-    // Update parcel count display
-    function updateParcelCount(count) {
-      document.getElementById('parcel-count').textContent = count;
-    }
-
-    // Load parcel data
-    async function loadParcels() {
-      try {
-        // Determine base path (works for both local dev and GitHub Pages)
-        const basePath = document.querySelector('base')?.getAttribute('href') || '/niskayuniverse/';
-        const dataPath = `${basePath}data/parcels_nys_index.json`.replace(/\/+/g, '/');
-        
-        const response = await fetch(dataPath);
-        if (!response.ok) {
-          throw new Error(`Failed to load parcels: ${response.status}`);
-        }
-        
-        parcelsData = await response.json();
-        console.log(`Loaded ${parcelsData.length} parcels`);
-        
-        // Initial display
-        const toggle = document.getElementById('parcels-toggle');
-        updateParcels(toggle.checked);
-        
-      } catch (error) {
-        console.error('Error loading parcels:', error);
-        alert('Failed to load parcel data. Please ensure parcels_nys_index.json exists.');
-      }
-    }
-
-    // Toggle event listener
-    document.getElementById('parcels-toggle').addEventListener('change', (e) => {
-      updateParcels(e.target.checked);
-    });
-
-    // Load data on page load
-    loadParcels();
-  </script>
-</body>
+      // Load data on page load
+      loadParcels();
+    </script>
+  </body>
 </html>
