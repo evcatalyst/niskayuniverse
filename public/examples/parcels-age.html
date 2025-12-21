@@ -199,18 +199,36 @@
       return 'Post-1986';
     }
     
+    // Escape HTML special characters to prevent XSS
+    function escapeHtml(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    
     // Create popup content
     function createParcelPopup(properties) {
       const yearBuilt = properties.year_built || 'Unknown';
       const ageCategory = getAgeCategory(properties.year_built);
       
+      const parcelId = escapeHtml(properties.parcel_id || 'N/A');
+      const address = escapeHtml(properties.address || 'N/A');
+      const buildingType = properties.building_type ? escapeHtml(properties.building_type) : '';
+      const provenance = properties.provenance ? escapeHtml(properties.provenance) : '';
+      
       return `
-        <strong>Parcel ${properties.parcel_id || 'N/A'}</strong>
-        <div class="info-row"><strong>Address:</strong> ${properties.address || 'N/A'}</div>
+        <strong>Parcel ${parcelId}</strong>
+        <div class="info-row"><strong>Address:</strong> ${address}</div>
         <div class="info-row"><strong>Year Built:</strong> ${yearBuilt}</div>
         <div class="info-row"><strong>Age Category:</strong> ${ageCategory}</div>
-        ${properties.building_type ? `<div class="info-row"><strong>Type:</strong> ${properties.building_type}</div>` : ''}
-        ${properties.provenance ? `<div class="info-row"><strong>Source:</strong> ${properties.provenance}</div>` : ''}
+        ${buildingType ? `<div class="info-row"><strong>Type:</strong> ${buildingType}</div>` : ''}
+        ${provenance ? `<div class="info-row"><strong>Source:</strong> ${provenance}</div>` : ''}
       `;
     }
     
@@ -256,10 +274,17 @@
       }
       
       const centroidFeatures = geojson.features.map(feature => {
-        // Calculate centroid of polygon
+        // Calculate centroid of polygon (only handles simple Polygon geometry)
+        if (feature.geometry.type !== 'Polygon') {
+          console.warn('Skipping non-Polygon feature:', feature.properties.parcel_id);
+          return null;
+        }
+        
+        // Use only the outer ring (first array), exclude closing coordinate
         const coords = feature.geometry.coordinates[0];
-        const lats = coords.map(c => c[1]);
-        const lngs = coords.map(c => c[0]);
+        const ring = coords.length > 1 ? coords.slice(0, -1) : coords;
+        const lats = ring.map(c => c[1]);
+        const lngs = ring.map(c => c[0]);
         const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
         const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
         
@@ -271,7 +296,7 @@
             coordinates: [centroidLng, centroidLat]
           }
         };
-      });
+      }).filter(f => f !== null);
       
       const centroidCollection = {
         type: 'FeatureCollection',
@@ -350,16 +375,27 @@
           }),
           onEachFeature: (feature, layer) => {
             const props = feature.properties || {};
+            const address = escapeHtml(props.address || 'Service line');
+            const id = escapeHtml(props.id || 'N/A');
+            const privateMaterial = props.private_material ? escapeHtml(props.private_material) : '';
+            const publicMaterial = props.public_material ? escapeHtml(props.public_material) : '';
+            const status = props.status ? escapeHtml(props.status) : '';
+            
             const popup = `
-              <strong>${props.address || 'Service line'}</strong>
-              <div class="info-row"><strong>ID:</strong> ${props.id || 'N/A'}</div>
-              ${props.private_material ? `<div class="info-row"><strong>Private:</strong> ${props.private_material}</div>` : ''}
-              ${props.public_material ? `<div class="info-row"><strong>Public:</strong> ${props.public_material}</div>` : ''}
-              ${props.status ? `<div class="info-row"><strong>Status:</strong> ${props.status}</div>` : ''}
+              <strong>${address}</strong>
+              <div class="info-row"><strong>ID:</strong> ${id}</div>
+              ${privateMaterial ? `<div class="info-row"><strong>Private:</strong> ${privateMaterial}</div>` : ''}
+              ${publicMaterial ? `<div class="info-row"><strong>Public:</strong> ${publicMaterial}</div>` : ''}
+              ${status ? `<div class="info-row"><strong>Status:</strong> ${status}</div>` : ''}
             `;
             layer.bindPopup(popup);
           }
-        }).addTo(map);
+        });
+        
+        // Add to map if service lines should be visible
+        if (showServiceLines) {
+          serviceLineLayer.addTo(map);
+        }
       })
       .catch(err => console.error('Service line load failed from', serviceLinesUrl, err));
     
