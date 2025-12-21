@@ -96,6 +96,7 @@ Other legacy workflows/configs were removed to keep this track canonical.
 - `public/data/parcels_nys.geojson`: NYS tax parcel polygons with Year Built enrichment.
 - `public/data/parcels_nys_index.json`: parcel attribute index keyed by parcel_id.
 - `public/examples/leaflet.html`: standalone Leaflet demo (resolves paths via the base path).
+- `public/examples/parcels-age.html`: parcel building age visualization with LOD switching, layer toggles, and choropleth mapping.
 - `public/control-panel.html`: quick visual preview of service line markers.
 
 ## Submission flow
