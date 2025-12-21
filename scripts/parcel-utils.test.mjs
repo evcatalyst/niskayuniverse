@@ -200,21 +200,21 @@ describe('attachProvenance', () => {
   it('should throw error when parcel is null or undefined', () => {
     expect(() => {
       attachProvenance(null, { source: 'Test' })
-    }).toThrow('Parcel must be a valid object')
+    }).toThrow('Parcel cannot be null or undefined')
 
     expect(() => {
       attachProvenance(undefined, { source: 'Test' })
-    }).toThrow('Parcel must be a valid object')
+    }).toThrow('Parcel cannot be null or undefined')
   })
 
   it('should throw error when parcel is not an object', () => {
     expect(() => {
       attachProvenance('not an object', { source: 'Test' })
-    }).toThrow('Parcel must be a valid object')
+    }).toThrow('Parcel must be an object')
 
     expect(() => {
       attachProvenance(123, { source: 'Test' })
-    }).toThrow('Parcel must be a valid object')
+    }).toThrow('Parcel must be an object')
   })
 
   it('should throw error when source is missing', () => {

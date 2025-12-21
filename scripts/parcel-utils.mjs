@@ -65,8 +65,12 @@ export function normalizeParcelId(parcel) {
  * @returns {object} - Parcel with provenance attached
  */
 export function attachProvenance(parcel, options = {}) {
-  if (!parcel || typeof parcel !== 'object') {
-    throw new Error('Parcel must be a valid object')
+  if (parcel === null || parcel === undefined) {
+    throw new Error('Parcel cannot be null or undefined')
+  }
+
+  if (typeof parcel !== 'object') {
+    throw new Error('Parcel must be an object, received: ' + typeof parcel)
   }
 
   if (!options.source) {

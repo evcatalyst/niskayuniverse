@@ -13,6 +13,13 @@ import { parseYearBuilt, normalizeParcelId, attachProvenance } from './parcel-ut
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+// Constants for data generation
+const PERCENTAGE_WITH_VALID_YEAR = 0.7 // 70% have valid year_built
+const PERCENTAGE_WITH_NULL_YEAR = 0.85 // 85% total (15% null year_built)
+const MIN_HISTORICAL_YEAR = 1850 // Earliest reasonable building year
+const SWIS_CODE_BASE = 40000 // Base for SWIS codes
+const SWIS_CODE_RANGE = 1000 // Range for random SWIS codes
+
 /**
  * Generate sample parcel data for testing
  * In production, this would fetch from NYS GIS or other data sources
@@ -24,10 +31,11 @@ function generateSampleParcels(count = 100) {
   for (let i = 0; i < count; i++) {
     // Generate a mix of parcels with various year_built values
     let yearBuilt
-    if (i < count * 0.7) {
+    if (i < count * PERCENTAGE_WITH_VALID_YEAR) {
       // 70% have valid year_built between 1850 and current year
-      yearBuilt = 1850 + Math.floor(Math.random() * (currentYear - 1850))
-    } else if (i < count * 0.85) {
+      yearBuilt =
+        MIN_HISTORICAL_YEAR + Math.floor(Math.random() * (currentYear - MIN_HISTORICAL_YEAR))
+    } else if (i < count * PERCENTAGE_WITH_NULL_YEAR) {
       // 15% have null/empty year_built
       yearBuilt = null
     } else {
@@ -36,7 +44,7 @@ function generateSampleParcels(count = 100) {
       yearBuilt = edgeCases[i % edgeCases.length]
     }
 
-    const swisCode = `${40000 + Math.floor(Math.random() * 1000)}`
+    const swisCode = `${SWIS_CODE_BASE + Math.floor(Math.random() * SWIS_CODE_RANGE)}`
     const sblId = `${swisCode}-${100 + i}-${10 + (i % 90)}`
     const printKeyId = `${swisCode}.${100 + i}.${10 + (i % 90)}`
 

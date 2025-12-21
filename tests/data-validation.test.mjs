@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -9,29 +9,23 @@ const __dirname = dirname(__filename)
 describe('Parcel Data Validation', () => {
   let parcels
 
-  it('should load parcels_nys_index.json successfully', () => {
+  beforeEach(() => {
     const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
     const data = readFileSync(dataPath, 'utf8')
     parcels = JSON.parse(data)
+  })
 
+  it('should load parcels_nys_index.json successfully', () => {
     expect(parcels).toBeDefined()
     expect(Array.isArray(parcels)).toBe(true)
   })
 
   it('should have at least a minimum number of records', () => {
-    const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
-    const data = readFileSync(dataPath, 'utf8')
-    parcels = JSON.parse(data)
-
     const MIN_RECORDS = 50 // Reasonable minimum for testing
     expect(parcels.length).toBeGreaterThanOrEqual(MIN_RECORDS)
   })
 
   it('should have a reasonable percentage of parcels with year_built', () => {
-    const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
-    const data = readFileSync(dataPath, 'utf8')
-    parcels = JSON.parse(data)
-
     const withYearBuilt = parcels.filter(
       (p) => p.year_built !== null && p.year_built !== undefined
     ).length
@@ -48,15 +42,11 @@ describe('Parcel Data Validation', () => {
   })
 
   it('should have valid year_built values when present', () => {
-    const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
-    const data = readFileSync(dataPath, 'utf8')
-    parcels = JSON.parse(data)
-
     const currentYear = new Date().getFullYear()
     const MIN_YEAR = 1600
     const MAX_YEAR = currentYear + 5
 
-    parcels.forEach((parcel, index) => {
+    parcels.forEach((parcel) => {
       if (parcel.year_built !== null && parcel.year_built !== undefined) {
         expect(parcel.year_built).toBeGreaterThanOrEqual(MIN_YEAR)
         expect(parcel.year_built).toBeLessThanOrEqual(MAX_YEAR)
@@ -65,11 +55,7 @@ describe('Parcel Data Validation', () => {
   })
 
   it('should have required provenance fields', () => {
-    const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
-    const data = readFileSync(dataPath, 'utf8')
-    parcels = JSON.parse(data)
-
-    parcels.forEach((parcel, index) => {
+    parcels.forEach((parcel) => {
       expect(parcel.source).toBeDefined()
       expect(parcel.source).not.toBe('')
 
@@ -82,11 +68,7 @@ describe('Parcel Data Validation', () => {
   })
 
   it('should have valid parcel_id for all records', () => {
-    const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
-    const data = readFileSync(dataPath, 'utf8')
-    parcels = JSON.parse(data)
-
-    parcels.forEach((parcel, index) => {
+    parcels.forEach((parcel) => {
       expect(parcel.parcel_id).toBeDefined()
       expect(parcel.parcel_id).not.toBe('')
       expect(parcel.parcel_id).not.toBe(null)
@@ -94,11 +76,7 @@ describe('Parcel Data Validation', () => {
   })
 
   it('should have valid coordinates', () => {
-    const dataPath = join(__dirname, '..', 'public', 'data', 'parcels_nys_index.json')
-    const data = readFileSync(dataPath, 'utf8')
-    parcels = JSON.parse(data)
-
-    parcels.forEach((parcel, index) => {
+    parcels.forEach((parcel) => {
       if (parcel.latitude !== null && parcel.latitude !== undefined) {
         expect(parcel.latitude).toBeGreaterThanOrEqual(-90)
         expect(parcel.latitude).toBeLessThanOrEqual(90)

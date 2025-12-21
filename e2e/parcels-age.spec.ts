@@ -34,11 +34,11 @@ test.describe('Parcels Age Example Page', () => {
     await page.goto('/examples/parcels-age.html')
     await page.waitForLoadState('networkidle')
 
-    // Wait for data to load
-    await page.waitForTimeout(2000)
-
     const toggle = page.locator('#parcels-toggle')
     const parcelCount = page.locator('#parcel-count')
+
+    // Wait for parcel count to have a value > 0
+    await expect(parcelCount).not.toHaveText('0', { timeout: 5000 })
 
     // Get initial count (should be > 0)
     const initialCount = await parcelCount.textContent()
@@ -46,7 +46,9 @@ test.describe('Parcels Age Example Page', () => {
 
     // Uncheck the toggle
     await toggle.click()
-    await page.waitForTimeout(500)
+
+    // Wait for count to become 0
+    await expect(parcelCount).toHaveText('0', { timeout: 2000 })
 
     // Count should be 0 when parcels are hidden
     const hiddenCount = await parcelCount.textContent()
@@ -54,7 +56,9 @@ test.describe('Parcels Age Example Page', () => {
 
     // Check the toggle again
     await toggle.click()
-    await page.waitForTimeout(500)
+
+    // Wait for count to be > 0 again
+    await expect(parcelCount).not.toHaveText('0', { timeout: 2000 })
 
     // Count should be back to initial value
     const restoredCount = await parcelCount.textContent()
@@ -65,8 +69,12 @@ test.describe('Parcels Age Example Page', () => {
     await page.goto('/examples/parcels-age.html')
     await page.waitForLoadState('networkidle')
 
-    // Wait for page to fully load and render
-    await page.waitForTimeout(3000)
+    // Wait for parcel count to be populated
+    const parcelCount = page.locator('#parcel-count')
+    await expect(parcelCount).not.toHaveText('0', { timeout: 5000 })
+
+    // Wait a bit more for map to fully render
+    await page.waitForTimeout(1000)
 
     // Take a screenshot of the entire page
     await expect(page).toHaveScreenshot('parcels-age-with-parcels.png', {
