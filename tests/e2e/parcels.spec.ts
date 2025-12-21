@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Parcel Layer', () => {
-  test('parcel data files exist and are accessible', async ({ page }) => {
+  test('parcel data files exist and are accessible', async ({ page, baseURL }) => {
     // Check that parcel GeoJSON is accessible
-    const parcelResponse = await page.request.get('/niskayuniverse/data/parcels_nys.geojson');
+    const parcelUrl = `${baseURL}/data/parcels_nys.geojson`;
+    const parcelResponse = await page.request.get(parcelUrl);
     expect(parcelResponse.ok()).toBeTruthy();
     
     const parcelData = await parcelResponse.json();
@@ -12,15 +13,17 @@ test.describe('Parcel Layer', () => {
     expect(parcelData.features.length).toBeGreaterThan(0);
     
     // Check that parcel index is accessible
-    const indexResponse = await page.request.get('/niskayuniverse/data/parcels_nys_index.json');
+    const indexUrl = `${baseURL}/data/parcels_nys_index.json`;
+    const indexResponse = await page.request.get(indexUrl);
     expect(indexResponse.ok()).toBeTruthy();
     
     const indexData = await indexResponse.json();
     expect(Object.keys(indexData).length).toBeGreaterThan(0);
   });
 
-  test('parcel data has correct schema', async ({ page }) => {
-    const parcelResponse = await page.request.get('/niskayuniverse/data/parcels_nys.geojson');
+  test('parcel data has correct schema', async ({ page, baseURL }) => {
+    const parcelUrl = `${baseURL}/data/parcels_nys.geojson`;
+    const parcelResponse = await page.request.get(parcelUrl);
     const parcelData = await parcelResponse.json();
     
     const firstFeature = parcelData.features[0];
@@ -37,8 +40,9 @@ test.describe('Parcel Layer', () => {
     expect(firstFeature.geometry.coordinates).toBeDefined();
   });
 
-  test('parcel index has correct structure', async ({ page }) => {
-    const indexResponse = await page.request.get('/niskayuniverse/data/parcels_nys_index.json');
+  test('parcel index has correct structure', async ({ page, baseURL }) => {
+    const indexUrl = `${baseURL}/data/parcels_nys_index.json`;
+    const indexResponse = await page.request.get(indexUrl);
     const indexData = await indexResponse.json();
     
     const firstKey = Object.keys(indexData)[0];
@@ -49,8 +53,9 @@ test.describe('Parcel Layer', () => {
     expect(firstEntry.provenance.source).toBe('NYS_Tax_Parcels_Public');
   });
 
-  test('parcels with year_built have valid ranges', async ({ page }) => {
-    const parcelResponse = await page.request.get('/niskayuniverse/data/parcels_nys.geojson');
+  test('parcels with year_built have valid ranges', async ({ page, baseURL }) => {
+    const parcelUrl = `${baseURL}/data/parcels_nys.geojson`;
+    const parcelResponse = await page.request.get(parcelUrl);
     const parcelData = await parcelResponse.json();
     
     const currentYear = new Date().getFullYear();

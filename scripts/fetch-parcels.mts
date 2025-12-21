@@ -81,7 +81,15 @@ interface ServiceLineRecord {
 export function parseYearBuilt(value: any): number | null {
   if (!value) return null;
   
-  const year = typeof value === 'string' ? parseInt(value, 10) : Number(value);
+  // Ensure we're working with a number
+  let year: number;
+  if (typeof value === 'string') {
+    year = parseInt(value, 10);
+  } else if (typeof value === 'number') {
+    year = Math.floor(value); // Ensure integer
+  } else {
+    return null; // Invalid type
+  }
   
   if (isNaN(year)) return null;
   
@@ -99,7 +107,12 @@ export function normalizeParcelId(attributes: any): string {
   const printKeyId = attributes.SWIS_PRINT_KEY_ID || attributes.PRINT_KEY;
   const objectId = attributes.OBJECTID;
   
-  return sblId || printKeyId || `PARCEL_${objectId}`;
+  if (sblId) return sblId;
+  if (printKeyId) return printKeyId;
+  if (objectId !== undefined && objectId !== null) return `PARCEL_${objectId}`;
+  
+  // Generate a random ID as final fallback for invalid data
+  return `PARCEL_${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**

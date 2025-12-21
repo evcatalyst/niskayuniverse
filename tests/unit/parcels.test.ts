@@ -63,7 +63,9 @@ describe('normalizeParcelId', () => {
 
   it('should handle empty attributes', () => {
     const attrs = {};
-    expect(normalizeParcelId(attrs)).toBe('PARCEL_undefined');
+    const result = normalizeParcelId(attrs);
+    // Should generate a random fallback ID
+    expect(result).toMatch(/^PARCEL_[a-z0-9]+$/);
   });
 });
 
