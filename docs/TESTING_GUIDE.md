@@ -11,6 +11,7 @@ This repository includes comprehensive test coverage for parcel data ingestion, 
 ## Running Tests
 
 ### All Tests
+
 ```bash
 npm run test        # Run unit tests
 npm run e2e         # Run E2E tests (requires build first)
@@ -20,6 +21,7 @@ npm run e2e:ui      # Open Playwright UI
 ```
 
 ### Linting and Type Checking
+
 ```bash
 npm run lint        # Check code formatting
 npm run format      # Format code
@@ -27,6 +29,7 @@ npm run typecheck   # TypeScript type checking
 ```
 
 ### Build and Preview
+
 ```bash
 npm run build       # Build the site
 npm run preview     # Preview the built site
@@ -38,7 +41,7 @@ npm run preview     # Preview the built site
 
 Tests for parcel data utility functions:
 
-- **parseYearBuilt()**: 
+- **parseYearBuilt()**:
   - Returns integer for valid years
   - Returns null for invalid/empty values
   - Rejects years before 1600
@@ -92,6 +95,7 @@ npm run ingest:parcels
 ```
 
 This generates `public/data/parcels_nys_index.json` with sample NYS parcel data including:
+
 - Parcel IDs (SWIS_SBL_ID and SWIS_PRINT_KEY_ID)
 - Property information (owner, address, values)
 - Year built data (with realistic distribution)
@@ -124,6 +128,7 @@ E2E tests include screenshot comparison for visual regression detection:
 ### E2E Tests Timeout
 
 If E2E tests timeout:
+
 1. Ensure the site builds successfully: `npm run build`
 2. Try running preview server manually: `npm run preview`
 3. Verify the page loads at `http://localhost:4321/niskayuniverse/examples/parcels-age.html`
@@ -132,6 +137,7 @@ If E2E tests timeout:
 ### TypeScript Errors
 
 Ensure @types/node is installed:
+
 ```bash
 npm install --save-dev @types/node
 ```
@@ -139,6 +145,7 @@ npm install --save-dev @types/node
 ### Test Data Missing
 
 Generate parcel data before running tests:
+
 ```bash
 npm run ingest:parcels
 npm run test
