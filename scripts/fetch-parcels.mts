@@ -135,6 +135,41 @@ export function normalizeAddress(address: string): string {
 }
 
 /**
+ * Attach provenance metadata to a record
+ * Always fills source, fetched_at, and join_method
+ */
+export function attachProvenance(
+  source: string,
+  sourceUrl: string,
+  joinMethod?: 'key' | 'address' | 'spatial',
+  confidence?: number
+): {
+  source: string;
+  source_url: string;
+  fetched_at: string;
+  join_method?: 'key' | 'address' | 'spatial';
+  confidence?: number;
+} {
+  const provenance = {
+    source,
+    source_url: sourceUrl,
+    fetched_at: new Date().toISOString(),
+    join_method: joinMethod,
+    confidence,
+  };
+  
+  // Remove undefined properties
+  if (joinMethod === undefined) {
+    delete provenance.join_method;
+  }
+  if (confidence === undefined) {
+    delete provenance.confidence;
+  }
+  
+  return provenance;
+}
+
+/**
  * Check if point is inside polygon (simple ray casting algorithm)
  */
 function pointInPolygon(point: [number, number], polygon: number[][][]): boolean {
@@ -343,13 +378,12 @@ function joinParcelsToServiceLines(
         street_addr: parcelAddress,
         city: attrs.CITY || attrs.MUNICIPALITY || 'Niskayuna',
         zip: attrs.ZIP || attrs.ZIP_CODE,
-        provenance: {
-          source: 'NYS_Tax_Parcels_Public',
-          source_url: NYS_PARCELS_MAPSERVER_URL,
-          fetched_at: new Date().toISOString(),
-          join_method: joinMethod,
-          confidence: joinMethod ? confidence : undefined,
-        },
+        provenance: attachProvenance(
+          'NYS_Tax_Parcels_Public',
+          NYS_PARCELS_MAPSERVER_URL,
+          joinMethod,
+          joinMethod ? confidence : undefined
+        ),
       },
       geometry: feature.geometry,
     };

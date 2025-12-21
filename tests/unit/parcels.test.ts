@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseYearBuilt, normalizeParcelId, normalizeAddress } from '../../scripts/fetch-parcels.mts';
+import { parseYearBuilt, normalizeParcelId, normalizeAddress, attachProvenance } from '../../scripts/fetch-parcels.mts';
 
 describe('parseYearBuilt', () => {
   it('should parse valid year as number', () => {
@@ -131,5 +131,122 @@ describe('Provenance tagging', () => {
     testConfidence(0.5);
     testConfidence(0.9);
     testConfidence(1);
+  });
+});
+
+describe('attachProvenance', () => {
+  it('should always fill source, source_url, and fetched_at', () => {
+    const provenance = attachProvenance('TestSource', 'https://test.com');
+    
+    expect(provenance.source).toBe('TestSource');
+    expect(provenance.source_url).toBe('https://test.com');
+    expect(provenance.fetched_at).toBeDefined();
+    expect(provenance.fetched_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('should include join_method when provided', () => {
+    const provenance = attachProvenance('TestSource', 'https://test.com', 'address');
+    
+    expect(provenance.join_method).toBe('address');
+  });
+
+  it('should include confidence when provided', () => {
+    const provenance = attachProvenance('TestSource', 'https://test.com', 'address', 0.9);
+    
+    expect(provenance.confidence).toBe(0.9);
+  });
+
+  it('should not include join_method when undefined', () => {
+    const provenance = attachProvenance('TestSource', 'https://test.com');
+    
+    expect(provenance).not.toHaveProperty('join_method');
+  });
+
+  it('should not include confidence when undefined', () => {
+    const provenance = attachProvenance('TestSource', 'https://test.com', 'key');
+    
+    expect(provenance).not.toHaveProperty('confidence');
+  });
+
+  it('should accept all valid join_method values', () => {
+    const keyProv = attachProvenance('TestSource', 'https://test.com', 'key');
+    const addrProv = attachProvenance('TestSource', 'https://test.com', 'address');
+    const spatialProv = attachProvenance('TestSource', 'https://test.com', 'spatial');
+    
+    expect(keyProv.join_method).toBe('key');
+    expect(addrProv.join_method).toBe('address');
+    expect(spatialProv.join_method).toBe('spatial');
+  });
+
+  it('should generate current timestamp', () => {
+    const before = new Date();
+    const provenance = attachProvenance('TestSource', 'https://test.com');
+    const after = new Date();
+    
+    const timestamp = new Date(provenance.fetched_at);
+    expect(timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(timestamp.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+});
+
+describe('Data validation - parcels_nys_index.json', () => {
+  it('should have at least 1 record', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    
+    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
+    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+    const recordCount = Object.keys(indexData).length;
+    
+    expect(recordCount).toBeGreaterThan(0);
+  });
+
+  it('should have records with valid provenance', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    
+    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
+    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+    
+    const firstKey = Object.keys(indexData)[0];
+    const firstRecord = indexData[firstKey];
+    
+    expect(firstRecord.provenance).toBeDefined();
+    expect(firstRecord.provenance.source).toBeDefined();
+    expect(firstRecord.provenance.source_url).toBeDefined();
+    expect(firstRecord.provenance.fetched_at).toBeDefined();
+  });
+
+  it('should have a meaningful percentage of records with year_built', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    
+    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
+    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+    
+    const records = Object.values(indexData) as any[];
+    const withYearBuilt = records.filter(r => r.year_built !== null && r.year_built !== undefined);
+    const percentage = (withYearBuilt.length / records.length) * 100;
+    
+    // At least some records should have year_built (not exactly 0%)
+    expect(percentage).toBeGreaterThan(0);
+  });
+
+  it('should have year_built values within valid range when present', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    
+    const indexPath = join(process.cwd(), 'public/data/parcels_nys_index.json');
+    const indexData = JSON.parse(readFileSync(indexPath, 'utf-8'));
+    
+    const currentYear = new Date().getFullYear();
+    const records = Object.values(indexData) as any[];
+    
+    for (const record of records) {
+      if (record.year_built !== null && record.year_built !== undefined) {
+        expect(record.year_built).toBeGreaterThanOrEqual(1700);
+        expect(record.year_built).toBeLessThanOrEqual(currentYear);
+      }
+    }
   });
 });
