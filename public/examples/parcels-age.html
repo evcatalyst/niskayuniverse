@@ -214,7 +214,7 @@
     
     // Create popup content
     function createParcelPopup(properties) {
-      const yearBuilt = escapeHtml(String(properties.year_built || 'Unknown'));
+      const yearBuilt = escapeHtml(properties.year_built || 'Unknown');
       const ageCategory = escapeHtml(getAgeCategory(properties.year_built));
       
       const parcelId = escapeHtml(properties.parcel_id || 'N/A');
@@ -276,7 +276,7 @@
       const centroidFeatures = geojson.features.map(feature => {
         // Calculate centroid of polygon (only handles simple Polygon geometry)
         if (feature.geometry.type !== 'Polygon') {
-          console.warn('Skipping non-Polygon feature:', feature.properties.parcel_id);
+          console.warn('Skipping non-Polygon feature');
           return null;
         }
         
