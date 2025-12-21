@@ -334,7 +334,7 @@
         parcelCentroidLayer = loadParcelCentroids(geojson);
         updateParcelLOD();
       })
-      .catch(err => console.error('Parcel load failed', err));
+      .catch(err => console.error('Parcel load failed from', parcelsUrl, err));
     
     // Load service lines
     fetch(serviceLinesUrl)
@@ -361,7 +361,7 @@
           }
         }).addTo(map);
       })
-      .catch(err => console.error('Service line load failed', err));
+      .catch(err => console.error('Service line load failed from', serviceLinesUrl, err));
     
     // Zoom event handler for LOD switching
     map.on('zoomend', updateParcelLOD);
