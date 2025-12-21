@@ -91,8 +91,8 @@ test.describe('Parcel Age Example - E2E', () => {
   test('visual regression - parcel map snapshot', async ({ page }) => {
     await page.goto('/examples/parcels-age.html', { waitUntil: 'domcontentloaded', timeout: 60000 });
     
-    // Wait for map to initialize
-    // Note: Using fixed timeout since map loading is async and doesn't provide a ready event
+    // Wait for map initialization - using a short fixed timeout is acceptable here
+    // since map loading is truly async without a reliable ready signal
     await page.waitForTimeout(2000);
     
     // Take a screenshot for visual regression testing
