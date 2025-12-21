@@ -218,9 +218,15 @@
       const ageCategory = escapeHtml(getAgeCategory(properties.year_built));
       
       const parcelId = escapeHtml(properties.parcel_id || 'N/A');
-      const address = escapeHtml(properties.address || 'N/A');
+      // Support both old format (address) and new format (street_addr)
+      const address = escapeHtml(properties.address || properties.street_addr || 'N/A');
       const buildingType = properties.building_type ? escapeHtml(properties.building_type) : '';
-      const provenance = properties.provenance ? escapeHtml(properties.provenance) : '';
+      // Handle provenance: can be a string or an object with source property
+      const provenanceSource = properties.provenance 
+        ? (typeof properties.provenance === 'string' 
+            ? escapeHtml(properties.provenance)
+            : escapeHtml(properties.provenance.source || ''))
+        : '';
       
       return `
         <strong>Parcel ${parcelId}</strong>
@@ -228,7 +234,7 @@
         <div class="info-row"><strong>Year Built:</strong> ${yearBuilt}</div>
         <div class="info-row"><strong>Age Category:</strong> ${ageCategory}</div>
         ${buildingType ? `<div class="info-row"><strong>Type:</strong> ${buildingType}</div>` : ''}
-        ${provenance ? `<div class="info-row"><strong>Source:</strong> ${provenance}</div>` : ''}
+        ${provenanceSource ? `<div class="info-row"><strong>Source:</strong> ${provenanceSource}</div>` : ''}
       `;
     }
     
