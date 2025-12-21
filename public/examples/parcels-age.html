@@ -214,8 +214,8 @@
     
     // Create popup content
     function createParcelPopup(properties) {
-      const yearBuilt = properties.year_built || 'Unknown';
-      const ageCategory = getAgeCategory(properties.year_built);
+      const yearBuilt = escapeHtml(String(properties.year_built || 'Unknown'));
+      const ageCategory = escapeHtml(getAgeCategory(properties.year_built));
       
       const parcelId = escapeHtml(properties.parcel_id || 'N/A');
       const address = escapeHtml(properties.address || 'N/A');
@@ -282,7 +282,7 @@
         
         // Use only the outer ring (first array), exclude closing coordinate
         const coords = feature.geometry.coordinates[0];
-        const ring = coords.length > 1 ? coords.slice(0, -1) : coords;
+        const ring = coords.slice(0, -1);
         const lats = ring.map(c => c[1]);
         const lngs = ring.map(c => c[0]);
         const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
