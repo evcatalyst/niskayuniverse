@@ -1006,7 +1006,7 @@ const zoom = siteConfig.map.zoom;
             }
 
             results.innerHTML = allFeatures.slice(0, 10).map((f, i) => `
-              <div class="search-result-item" onclick="flyToFeature(${i})">
+              <div class="search-result-item" data-result-index="${i}">
                 <strong>${escapeHtml(f.title)}</strong>
                 <span>${escapeHtml(f.subtitle)}</span>
               </div>
@@ -1015,7 +1015,20 @@ const zoom = siteConfig.map.zoom;
             window.searchResults = allFeatures;
           }, 300);
         });
+
+        // Event delegation for search result clicks
+        results.addEventListener('click', (e) => {
+          const resultItem = e.target.closest('.search-result-item');
+          if (!resultItem) return;
+          
+          const index = parseInt(resultItem.dataset.resultIndex, 10);
+          if (!isNaN(index)) {
+            window.flyToFeature(index);
+          }
+        });
       }
+
+      const SEARCH_RESULT_ZOOM_LEVEL = 17;
 
       window.flyToFeature = function(index) {
         const feature = window.searchResults[index];
@@ -1036,7 +1049,7 @@ const zoom = siteConfig.map.zoom;
         }
 
         if (latlng) {
-          map.flyTo(latlng, Math.max(17, map.getZoom()), { duration: 1 });
+          map.flyTo(latlng, Math.max(SEARCH_RESULT_ZOOM_LEVEL, map.getZoom()), { duration: 1 });
         }
       };
 
