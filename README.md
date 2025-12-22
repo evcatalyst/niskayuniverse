@@ -89,6 +89,23 @@ Service line records are joined to parcels using the following hierarchy:
 
 Other legacy workflows/configs were removed to keep this track canonical.
 
+## User Interfaces
+
+### Main UI (`/`)
+Public-facing portal with service line map, resident submission form, and address autocomplete.
+
+### Analytics Dashboard (`/analytics`)
+**NEW** - Professional full-screen analytics interface featuring:
+- Full-screen interactive map with all data layers
+- Minimizable, draggable overlay panels for search, layer control, and statistics
+- Historical data timeline chart showing pH and lead levels over time
+- Building age choropleth visualization (Pre-1920, 1920-1950, Lead Era 1951-1986, Post-1986)
+- Real-time statistics (total parcels, lead era buildings, submissions, avg pH)
+- Cross-layer search (parcels, service lines, submissions)
+- LOD (Level of Detail) switching for performance
+
+**[View Analytics UI Documentation](docs/ANALYTICS_UI.md)** for detailed usage guide.
+
 ## Data & examples
 
 - `public/data/service_lines.geojson`: sample FeatureCollection.

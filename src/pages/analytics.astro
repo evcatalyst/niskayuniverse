@@ -1,0 +1,1111 @@
+---
+import { siteConfig, withBasePath } from '../lib/siteConfig.js';
+
+const baseHref = withBasePath('/');
+const serviceLinesUrl = withBasePath(siteConfig.dataPaths.serviceLines);
+const submissionsUrl = withBasePath(siteConfig.dataPaths.submissions);
+const parcelsUrl = withBasePath('data/parcels_nys.geojson');
+const [lat, lng] = siteConfig.map.center;
+const zoom = siteConfig.map.zoom;
+---
+
+<!doctype html>
+<html lang="en" data-base-path={baseHref} data-service-lines={serviceLinesUrl} data-submissions={submissionsUrl} data-parcels={parcelsUrl}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{siteConfig.municipalityName} Water Atlas - Analytics</title>
+    <base href={baseHref} />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        overflow: hidden;
+        background: #1e293b;
+      }
+      
+      /* Full-screen map container */
+      #map {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+      }
+      
+      /* Top header bar */
+      .header-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        z-index: 1000;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      
+      .header-bar h1 {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 600;
+        margin-right: auto;
+      }
+      
+      .header-bar .badge {
+        background: #0ea5e9;
+        color: #fff;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 12px;
+      }
+      
+      /* Overlay panels */
+      .overlay-panel {
+        position: fixed;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        z-index: 900;
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        overflow: hidden;
+      }
+      
+      .overlay-panel.minimized {
+        height: 48px !important;
+        overflow: hidden;
+      }
+      
+      .overlay-panel.popped-out {
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        z-index: 1100;
+      }
+      
+      .panel-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 12px 16px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        cursor: move;
+        user-select: none;
+      }
+      
+      .panel-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #0f172a;
+        flex: 1;
+      }
+      
+      .panel-controls {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .panel-btn {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+      
+      .panel-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: #0f172a;
+      }
+      
+      .panel-content {
+        padding: 16px;
+        overflow-y: auto;
+        max-height: calc(100% - 48px);
+      }
+      
+      /* Search panel - top left */
+      #search-panel {
+        top: 80px;
+        left: 20px;
+        width: 380px;
+        max-height: 500px;
+      }
+      
+      /* Timeline panel - bottom */
+      #timeline-panel {
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        height: 280px;
+      }
+      
+      /* Layer control panel - top right */
+      #layer-panel {
+        top: 80px;
+        right: 20px;
+        width: 320px;
+        max-height: 600px;
+      }
+      
+      /* Stats panel - middle right */
+      #stats-panel {
+        top: 300px;
+        right: 20px;
+        width: 320px;
+        max-height: 400px;
+      }
+      
+      /* Search input */
+      .search-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+      
+      .search-input:focus {
+        outline: none;
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      }
+      
+      .search-results {
+        margin-top: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      
+      .search-result-item {
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        margin-bottom: 6px;
+        background: #f8fafc;
+      }
+      
+      .search-result-item:hover {
+        background: #e0f2fe;
+        border-left-color: #0ea5e9;
+      }
+      
+      .search-result-item strong {
+        display: block;
+        color: #0f172a;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+      
+      .search-result-item span {
+        color: #64748b;
+        font-size: 12px;
+      }
+      
+      /* Layer controls */
+      .layer-group {
+        margin-bottom: 16px;
+      }
+      
+      .layer-group-title {
+        font-weight: 600;
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+      
+      .layer-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        background: #f8fafc;
+        transition: all 0.2s;
+      }
+      
+      .layer-item:hover {
+        background: #e0f2fe;
+      }
+      
+      .layer-checkbox {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      
+      .layer-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        margin-right: 10px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+      }
+      
+      .layer-label {
+        flex: 1;
+        font-size: 13px;
+        color: #0f172a;
+      }
+      
+      .layer-count {
+        font-size: 11px;
+        color: #64748b;
+        background: #e2e8f0;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      
+      /* Stats cards */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      
+      .stat-card {
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        padding: 14px;
+        border-radius: 8px;
+        color: #fff;
+      }
+      
+      .stat-card.warning {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      }
+      
+      .stat-card.success {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      }
+      
+      .stat-card.neutral {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      }
+      
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      
+      .stat-label {
+        font-size: 11px;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      /* Timeline chart */
+      .chart-container {
+        position: relative;
+        height: 180px;
+        margin-top: 12px;
+      }
+      
+      /* Loading overlay */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        opacity: 1;
+        transition: opacity 0.3s;
+      }
+      
+      .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(14, 165, 233, 0.3);
+        border-top-color: #0ea5e9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Legend */
+      .map-legend {
+        position: fixed;
+        bottom: 320px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        z-index: 800;
+      }
+      
+      .legend-title {
+        font-weight: 600;
+        font-size: 12px;
+        color: #0f172a;
+        margin-bottom: 8px;
+      }
+      
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 6px 0;
+        font-size: 11px;
+        color: #475569;
+      }
+      
+      .legend-item i {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 8px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Mobile responsive */
+      @media (max-width: 768px) {
+        #search-panel,
+        #layer-panel,
+        #stats-panel {
+          width: calc(100vw - 40px);
+        }
+        
+        #timeline-panel {
+          height: 220px;
+        }
+        
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        #stats-panel {
+          top: auto;
+          bottom: 260px;
+          max-height: 300px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-overlay" id="loading">
+      <div class="spinner"></div>
+    </div>
+    
+    <div class="header-bar">
+      <h1>{siteConfig.municipalityName} Water Atlas</h1>
+      <span class="badge">Analytics Dashboard</span>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="map-legend">
+      <div class="legend-title">Building Age</div>
+      <div class="legend-item">
+        <i style="background:#7c2d12;"></i>
+        <span>Pre-1920</span>
+      </div>
+      <div class="legend-item">
+        <i style="background:#ea580c;"></i>
+        <span>1920–1950</span>
+      </div>
+      <div class="legend-item">
+        <i style="background:#fbbf24;"></i>
+        <span>1951–1986 (Lead Era)</span>
+      </div>
+      <div class="legend-item">
+        <i style="background:#4ade80;"></i>
+        <span>Post-1986</span>
+      </div>
+      <div class="legend-item">
+        <i style="background:#94a3b8;"></i>
+        <span>Unknown</span>
+      </div>
+    </div>
+    
+    <!-- Search Panel -->
+    <div class="overlay-panel" id="search-panel">
+      <div class="panel-header">
+        <span class="panel-title">🔍 Search & Filter</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-panel="search-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="search-panel" data-action="popout" title="Pop Out">⧉</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <input 
+          type="text" 
+          class="search-input" 
+          id="search-input"
+          placeholder="Search by address, parcel ID..."
+        />
+        <div class="search-results" id="search-results"></div>
+      </div>
+    </div>
+    
+    <!-- Layer Control Panel -->
+    <div class="overlay-panel" id="layer-panel">
+      <div class="panel-header">
+        <span class="panel-title">🗂️ Layers</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-panel="layer-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="layer-panel" data-action="popout" title="Pop Out">⧉</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div class="layer-group">
+          <div class="layer-group-title">Data Layers</div>
+          <div class="layer-item">
+            <input type="checkbox" class="layer-checkbox" id="toggle-parcels" checked>
+            <div class="layer-color" style="background:#fbbf24;"></div>
+            <label class="layer-label" for="toggle-parcels">Tax Parcels</label>
+            <span class="layer-count" id="parcels-count">0</span>
+          </div>
+          <div class="layer-item">
+            <input type="checkbox" class="layer-checkbox" id="toggle-service-lines" checked>
+            <div class="layer-color" style="background:#0ea5e9;"></div>
+            <label class="layer-label" for="toggle-service-lines">Service Lines</label>
+            <span class="layer-count" id="service-lines-count">0</span>
+          </div>
+          <div class="layer-item">
+            <input type="checkbox" class="layer-checkbox" id="toggle-submissions" checked>
+            <div class="layer-color" style="background:#f97316;"></div>
+            <label class="layer-label" for="toggle-submissions">Resident Submissions</label>
+            <span class="layer-count" id="submissions-count">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats Panel -->
+    <div class="overlay-panel" id="stats-panel">
+      <div class="panel-header">
+        <span class="panel-title">📊 Statistics</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-panel="stats-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="stats-panel" data-action="popout" title="Pop Out">⧉</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="total-parcels">0</div>
+            <div class="stat-label">Total Parcels</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-value" id="lead-era-parcels">0</div>
+            <div class="stat-label">Lead Era (1951-86)</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-value" id="total-submissions">0</div>
+            <div class="stat-label">Submissions</div>
+          </div>
+          <div class="stat-card neutral">
+            <div class="stat-value" id="avg-ph">-</div>
+            <div class="stat-label">Avg pH</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Timeline Panel -->
+    <div class="overlay-panel" id="timeline-panel">
+      <div class="panel-header">
+        <span class="panel-title">📈 Historical Data Timeline</span>
+        <div class="panel-controls">
+          <button class="panel-btn" data-panel="timeline-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="timeline-panel" data-action="popout" title="Pop Out">⧉</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div class="chart-container">
+          <canvas id="timeline-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script define:vars={{ lat, lng, zoom }}>
+      const config = {
+        basePath: document.documentElement.dataset.basePath,
+        serviceLinesUrl: document.documentElement.dataset.serviceLines,
+        submissionsUrl: document.documentElement.dataset.submissions,
+        parcelsUrl: document.documentElement.dataset.parcels,
+        mapCenter: [lat, lng],
+        mapZoom: zoom,
+      };
+
+      let map;
+      let layers = {
+        parcels: null,
+        parcelCentroids: null,
+        serviceLines: null,
+        submissions: null,
+      };
+      let data = {
+        parcels: null,
+        serviceLines: null,
+        submissions: null,
+      };
+      let timelineChart = null;
+      
+      const LOD_ZOOM_THRESHOLD = 15;
+
+      // Utility: Escape HTML
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // Building age color mapping
+      function getAgeColor(yearBuilt) {
+        if (!yearBuilt || yearBuilt === null) return '#94a3b8';
+        if (yearBuilt < 1920) return '#7c2d12';
+        if (yearBuilt >= 1920 && yearBuilt <= 1950) return '#ea580c';
+        if (yearBuilt >= 1951 && yearBuilt <= 1986) return '#fbbf24';
+        return '#4ade80';
+      }
+
+      // Panel controls
+      function togglePanel(panelId) {
+        const panel = document.getElementById(panelId);
+        panel.classList.toggle('minimized');
+      }
+
+      function popOutPanel(panelId) {
+        const panel = document.getElementById(panelId);
+        panel.classList.toggle('popped-out');
+      }
+
+      // Setup panel control event listeners
+      function setupPanelControls() {
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('.panel-btn');
+          if (!btn) return;
+          
+          const panelId = btn.dataset.panel;
+          const action = btn.dataset.action;
+          
+          if (!panelId) return;
+          
+          if (action === 'minimize') {
+            togglePanel(panelId);
+          } else if (action === 'popout') {
+            popOutPanel(panelId);
+          }
+        });
+      }
+
+      // Make panels draggable
+      function makeDraggable(panel) {
+        const header = panel.querySelector('.panel-header');
+        let isDragging = false;
+        let currentX, currentY, initialX, initialY;
+
+        header.addEventListener('mousedown', (e) => {
+          if (e.target.classList.contains('panel-btn')) return;
+          isDragging = true;
+          initialX = e.clientX - panel.offsetLeft;
+          initialY = e.clientY - panel.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          e.preventDefault();
+          currentX = e.clientX - initialX;
+          currentY = e.clientY - initialY;
+          panel.style.left = currentX + 'px';
+          panel.style.top = currentY + 'px';
+          panel.style.right = 'auto';
+          panel.style.bottom = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+          isDragging = false;
+        });
+      }
+
+      // Load parcels
+      async function loadParcels() {
+        try {
+          const res = await fetch(config.parcelsUrl);
+          if (!res.ok) throw new Error(`Failed to load parcels (${res.status})`);
+          data.parcels = await res.json();
+          
+          layers.parcels = L.geoJSON(data.parcels, {
+            style: (feature) => ({
+              fillColor: getAgeColor(feature.properties.year_built),
+              weight: 1,
+              opacity: 0.8,
+              color: '#334155',
+              fillOpacity: 0.6
+            }),
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties;
+              const popup = `
+                <strong>Parcel ${escapeHtml(props.parcel_id || 'N/A')}</strong><br/>
+                <strong>Address:</strong> ${escapeHtml(props.street_addr || props.address || 'N/A')}<br/>
+                <strong>Year Built:</strong> ${escapeHtml(props.year_built || 'Unknown')}<br/>
+                ${props.owner_name ? `<strong>Owner:</strong> ${escapeHtml(props.owner_name)}<br/>` : ''}
+              `;
+              layer.bindPopup(popup);
+            }
+          });
+
+          // Create centroids - handle both Polygon and MultiPolygon
+          const centroids = data.parcels.features.map(f => {
+            if (f.geometry.type === 'Polygon') {
+              const coords = f.geometry.coordinates[0];
+              const ring = coords.slice(0, -1);
+              const lats = ring.map(c => c[1]);
+              const lngs = ring.map(c => c[0]);
+              const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
+              const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
+              return {
+                type: 'Feature',
+                properties: f.properties,
+                geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] }
+              };
+            } else if (f.geometry.type === 'MultiPolygon') {
+              // Use first polygon for centroid calculation
+              const coords = f.geometry.coordinates[0][0];
+              const ring = coords.slice(0, -1);
+              const lats = ring.map(c => c[1]);
+              const lngs = ring.map(c => c[0]);
+              const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
+              const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
+              return {
+                type: 'Feature',
+                properties: f.properties,
+                geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] }
+              };
+            }
+            return null;
+          }).filter(f => f);
+
+          layers.parcelCentroids = L.geoJSON({ type: 'FeatureCollection', features: centroids }, {
+            pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+              radius: 6,
+              fillColor: getAgeColor(feature.properties.year_built),
+              color: '#334155',
+              weight: 1,
+              opacity: 0.8,
+              fillOpacity: 0.7
+            }),
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties;
+              const popup = `
+                <strong>Parcel ${escapeHtml(props.parcel_id || 'N/A')}</strong><br/>
+                <strong>Address:</strong> ${escapeHtml(props.street_addr || props.address || 'N/A')}<br/>
+                <strong>Year Built:</strong> ${escapeHtml(props.year_built || 'Unknown')}<br/>
+              `;
+              layer.bindPopup(popup);
+            }
+          });
+
+          updateParcelLOD();
+          updateStats();
+          document.getElementById('parcels-count').textContent = data.parcels.features.length;
+        } catch (error) {
+          console.error('Failed to load parcels:', error);
+        }
+      }
+
+      // Load service lines
+      async function loadServiceLines() {
+        try {
+          const res = await fetch(config.serviceLinesUrl);
+          if (!res.ok) throw new Error(`Failed to load service lines (${res.status})`);
+          data.serviceLines = await res.json();
+          
+          layers.serviceLines = L.geoJSON(data.serviceLines, {
+            pointToLayer: (_, latlng) => L.circleMarker(latlng, {
+              radius: 7,
+              color: '#0ea5e9',
+              weight: 2,
+              fillColor: '#0ea5e9',
+              fillOpacity: 0.7
+            }),
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties;
+              const popup = `
+                <strong>${escapeHtml(props.address || 'Service Line')}</strong><br/>
+                ${props.private_material ? `Private: ${escapeHtml(props.private_material)}<br/>` : ''}
+                ${props.public_material ? `Public: ${escapeHtml(props.public_material)}<br/>` : ''}
+                ${props.status ? `Status: ${escapeHtml(props.status)}` : ''}
+              `;
+              layer.bindPopup(popup);
+            }
+          });
+          
+          layers.serviceLines.addTo(map);
+          document.getElementById('service-lines-count').textContent = data.serviceLines.features.length;
+        } catch (error) {
+          console.error('Failed to load service lines:', error);
+        }
+      }
+
+      // Load submissions
+      async function loadSubmissions() {
+        try {
+          const res = await fetch(config.submissionsUrl);
+          if (!res.ok) throw new Error(`Failed to load submissions (${res.status})`);
+          data.submissions = await res.json();
+          
+          const features = data.submissions
+            .filter(s => s.coordinates && s.coordinates.lat && s.coordinates.lng)
+            .map(s => ({
+              type: 'Feature',
+              properties: s,
+              geometry: { type: 'Point', coordinates: [s.coordinates.lng, s.coordinates.lat] }
+            }));
+
+          layers.submissions = L.geoJSON({ type: 'FeatureCollection', features }, {
+            pointToLayer: (_, latlng) => L.circleMarker(latlng, {
+              radius: 6,
+              color: '#f97316',
+              weight: 2,
+              fillColor: '#f97316',
+              fillOpacity: 0.8
+            }),
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties;
+              const popup = `
+                <strong>${escapeHtml(props.address)}</strong><br/>
+                ${props.ph ? `pH: ${props.ph}<br/>` : ''}
+                ${props.tds ? `TDS: ${props.tds} ppm<br/>` : ''}
+                ${props.leadPpb ? `Lead: ${props.leadPpb} ppb<br/>` : ''}
+                <small>${escapeHtml(props.submittedAt || '')}</small>
+              `;
+              layer.bindPopup(popup);
+            }
+          });
+          
+          layers.submissions.addTo(map);
+          updateStats();
+          updateTimeline();
+          document.getElementById('submissions-count').textContent = data.submissions.length;
+        } catch (error) {
+          console.error('Failed to load submissions:', error);
+        }
+      }
+
+      // Update parcel LOD
+      function updateParcelLOD() {
+        if (!layers.parcels || !layers.parcelCentroids) return;
+        const currentZoom = map.getZoom();
+        const showParcels = document.getElementById('toggle-parcels').checked;
+
+        if (!showParcels) {
+          if (map.hasLayer(layers.parcels)) layers.parcels.remove();
+          if (map.hasLayer(layers.parcelCentroids)) layers.parcelCentroids.remove();
+          return;
+        }
+
+        if (currentZoom >= LOD_ZOOM_THRESHOLD) {
+          if (map.hasLayer(layers.parcelCentroids)) layers.parcelCentroids.remove();
+          if (!map.hasLayer(layers.parcels)) layers.parcels.addTo(map);
+        } else {
+          if (map.hasLayer(layers.parcels)) layers.parcels.remove();
+          if (!map.hasLayer(layers.parcelCentroids)) layers.parcelCentroids.addTo(map);
+        }
+      }
+
+      // Update statistics
+      function updateStats() {
+        if (data.parcels) {
+          const totalParcels = data.parcels.features.length;
+          const leadEraParcels = data.parcels.features.filter(f => {
+            const year = f.properties.year_built;
+            return year && year >= 1951 && year <= 1986;
+          }).length;
+          
+          document.getElementById('total-parcels').textContent = totalParcels;
+          document.getElementById('lead-era-parcels').textContent = leadEraParcels;
+        }
+
+        if (data.submissions) {
+          const totalSubmissions = data.submissions.length;
+          const phValues = data.submissions.map(s => s.ph).filter(v => v != null);
+          const avgPh = phValues.length > 0 
+            ? (phValues.reduce((a, b) => a + b, 0) / phValues.length).toFixed(1)
+            : '-';
+          
+          document.getElementById('total-submissions').textContent = totalSubmissions;
+          document.getElementById('avg-ph').textContent = avgPh;
+        }
+      }
+
+      // Update timeline chart
+      function updateTimeline() {
+        if (!data.submissions || data.submissions.length === 0) return;
+
+        const sortedSubmissions = [...data.submissions]
+          .filter(s => s.submittedAt)
+          .sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+
+        const labels = sortedSubmissions.map(s => {
+          const date = new Date(s.submittedAt);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        const phData = sortedSubmissions.map(s => s.ph || null);
+        const leadData = sortedSubmissions.map(s => s.leadPpb || null);
+
+        const ctx = document.getElementById('timeline-chart');
+        if (timelineChart) timelineChart.destroy();
+
+        timelineChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'pH Level',
+                data: phData,
+                borderColor: '#0ea5e9',
+                backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                tension: 0.4,
+                yAxisID: 'y'
+              },
+              {
+                label: 'Lead (ppb)',
+                data: leadData,
+                borderColor: '#f97316',
+                backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                tension: 0.4,
+                yAxisID: 'y1'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+              }
+            },
+            scales: {
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'pH' },
+                min: 0,
+                max: 14
+              },
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: { display: true, text: 'Lead (ppb)' },
+                grid: {
+                  drawOnChartArea: false
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Search functionality
+      function setupSearch() {
+        const input = document.getElementById('search-input');
+        const results = document.getElementById('search-results');
+        let debounce;
+
+        input.addEventListener('input', (e) => {
+          clearTimeout(debounce);
+          const query = e.target.value.toLowerCase().trim();
+          
+          if (query.length < 2) {
+            results.innerHTML = '';
+            return;
+          }
+
+          debounce = setTimeout(() => {
+            const allFeatures = [];
+            
+            if (data.parcels) {
+              data.parcels.features.forEach(f => {
+                const props = f.properties;
+                const searchText = [
+                  props.parcel_id,
+                  props.street_addr,
+                  props.address,
+                  props.owner_name
+                ].filter(Boolean).join(' ').toLowerCase();
+                
+                if (searchText.includes(query)) {
+                  allFeatures.push({
+                    type: 'parcel',
+                    title: props.street_addr || props.address || 'Parcel',
+                    subtitle: `Parcel ${props.parcel_id || 'N/A'} • Built ${props.year_built || 'Unknown'}`,
+                    geometry: f.geometry
+                  });
+                }
+              });
+            }
+
+            if (data.serviceLines) {
+              data.serviceLines.features.forEach(f => {
+                const props = f.properties;
+                const searchText = [props.address, props.id].filter(Boolean).join(' ').toLowerCase();
+                
+                if (searchText.includes(query)) {
+                  allFeatures.push({
+                    type: 'service-line',
+                    title: props.address || 'Service Line',
+                    subtitle: `${props.private_material || 'Unknown'} • ${props.status || 'N/A'}`,
+                    geometry: f.geometry
+                  });
+                }
+              });
+            }
+
+            results.innerHTML = allFeatures.slice(0, 10).map((f, i) => `
+              <div class="search-result-item" data-result-index="${i}">
+                <strong>${escapeHtml(f.title)}</strong>
+                <span>${escapeHtml(f.subtitle)}</span>
+              </div>
+            `).join('') || '<div style="padding:12px;color:#64748b;font-size:12px;">No results found</div>';
+            
+            window.searchResults = allFeatures;
+          }, 300);
+        });
+
+        // Event delegation for search result clicks
+        results.addEventListener('click', (e) => {
+          const resultItem = e.target.closest('.search-result-item');
+          if (!resultItem) return;
+          
+          const index = parseInt(resultItem.dataset.resultIndex, 10);
+          if (!isNaN(index)) {
+            window.flyToFeature(index);
+          }
+        });
+      }
+
+      const SEARCH_RESULT_ZOOM_LEVEL = 17;
+
+      window.flyToFeature = function(index) {
+        const feature = window.searchResults[index];
+        if (!feature) return;
+
+        let latlng;
+        if (feature.geometry.type === 'Point') {
+          latlng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+        } else if (feature.geometry.type === 'Polygon') {
+          const coords = feature.geometry.coordinates[0];
+          const ring = coords.slice(0, -1);
+          const lats = ring.map(c => c[1]);
+          const lngs = ring.map(c => c[0]);
+          latlng = [
+            lats.reduce((a, b) => a + b) / lats.length,
+            lngs.reduce((a, b) => a + b) / lngs.length
+          ];
+        }
+
+        if (latlng) {
+          map.flyTo(latlng, Math.max(SEARCH_RESULT_ZOOM_LEVEL, map.getZoom()), { duration: 1 });
+        }
+      };
+
+      // Layer toggles
+      function setupLayerToggles() {
+        document.getElementById('toggle-parcels').addEventListener('change', updateParcelLOD);
+        
+        document.getElementById('toggle-service-lines').addEventListener('change', (e) => {
+          if (layers.serviceLines) {
+            if (e.target.checked) {
+              layers.serviceLines.addTo(map);
+            } else {
+              layers.serviceLines.remove();
+            }
+          }
+        });
+        
+        document.getElementById('toggle-submissions').addEventListener('change', (e) => {
+          if (layers.submissions) {
+            if (e.target.checked) {
+              layers.submissions.addTo(map);
+            } else {
+              layers.submissions.remove();
+            }
+          }
+        });
+      }
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', async () => {
+        map = L.map('map', { scrollWheelZoom: true }).setView(config.mapCenter, config.mapZoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        map.on('zoomend', updateParcelLOD);
+
+        // Make panels draggable
+        ['search-panel', 'layer-panel', 'stats-panel', 'timeline-panel'].forEach(id => {
+          makeDraggable(document.getElementById(id));
+        });
+
+        setupPanelControls();
+        setupSearch();
+        setupLayerToggles();
+
+        // Load data
+        await Promise.all([
+          loadParcels(),
+          loadServiceLines(),
+          loadSubmissions()
+        ]);
+
+        document.getElementById('loading').classList.add('hidden');
+      });
+    </script>
+  </body>
+</html>
