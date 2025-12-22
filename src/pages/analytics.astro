@@ -461,8 +461,8 @@ const zoom = siteConfig.map.zoom;
       <div class="panel-header">
         <span class="panel-title">🔍 Search & Filter</span>
         <div class="panel-controls">
-          <button class="panel-btn" onclick="togglePanel('search-panel')" title="Minimize">−</button>
-          <button class="panel-btn" onclick="popOutPanel('search-panel')" title="Pop Out">⧉</button>
+          <button class="panel-btn" data-panel="search-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="search-panel" data-action="popout" title="Pop Out">⧉</button>
         </div>
       </div>
       <div class="panel-content">
@@ -481,8 +481,8 @@ const zoom = siteConfig.map.zoom;
       <div class="panel-header">
         <span class="panel-title">🗂️ Layers</span>
         <div class="panel-controls">
-          <button class="panel-btn" onclick="togglePanel('layer-panel')" title="Minimize">−</button>
-          <button class="panel-btn" onclick="popOutPanel('layer-panel')" title="Pop Out">⧉</button>
+          <button class="panel-btn" data-panel="layer-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="layer-panel" data-action="popout" title="Pop Out">⧉</button>
         </div>
       </div>
       <div class="panel-content">
@@ -515,8 +515,8 @@ const zoom = siteConfig.map.zoom;
       <div class="panel-header">
         <span class="panel-title">📊 Statistics</span>
         <div class="panel-controls">
-          <button class="panel-btn" onclick="togglePanel('stats-panel')" title="Minimize">−</button>
-          <button class="panel-btn" onclick="popOutPanel('stats-panel')" title="Pop Out">⧉</button>
+          <button class="panel-btn" data-panel="stats-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="stats-panel" data-action="popout" title="Pop Out">⧉</button>
         </div>
       </div>
       <div class="panel-content">
@@ -546,8 +546,8 @@ const zoom = siteConfig.map.zoom;
       <div class="panel-header">
         <span class="panel-title">📈 Historical Data Timeline</span>
         <div class="panel-controls">
-          <button class="panel-btn" onclick="togglePanel('timeline-panel')" title="Minimize">−</button>
-          <button class="panel-btn" onclick="popOutPanel('timeline-panel')" title="Pop Out">⧉</button>
+          <button class="panel-btn" data-panel="timeline-panel" data-action="minimize" title="Minimize">−</button>
+          <button class="panel-btn" data-panel="timeline-panel" data-action="popout" title="Pop Out">⧉</button>
         </div>
       </div>
       <div class="panel-content">
@@ -614,6 +614,25 @@ const zoom = siteConfig.map.zoom;
         panel.classList.toggle('popped-out');
       }
 
+      // Setup panel control event listeners
+      function setupPanelControls() {
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('.panel-btn');
+          if (!btn) return;
+          
+          const panelId = btn.dataset.panel;
+          const action = btn.dataset.action;
+          
+          if (!panelId) return;
+          
+          if (action === 'minimize') {
+            togglePanel(panelId);
+          } else if (action === 'popout') {
+            popOutPanel(panelId);
+          }
+        });
+      }
+
       // Make panels draggable
       function makeDraggable(panel) {
         const header = panel.querySelector('.panel-header');
@@ -646,7 +665,7 @@ const zoom = siteConfig.map.zoom;
       // Load parcels
       async function loadParcels() {
         try {
-          const res = await fetch(config.parcelsUrl, { cache: 'no-store' });
+          const res = await fetch(config.parcelsUrl);
           if (!res.ok) throw new Error(`Failed to load parcels (${res.status})`);
           data.parcels = await res.json();
           
@@ -670,20 +689,35 @@ const zoom = siteConfig.map.zoom;
             }
           });
 
-          // Create centroids
+          // Create centroids - handle both Polygon and MultiPolygon
           const centroids = data.parcels.features.map(f => {
-            if (f.geometry.type !== 'Polygon') return null;
-            const coords = f.geometry.coordinates[0];
-            const ring = coords.slice(0, -1);
-            const lats = ring.map(c => c[1]);
-            const lngs = ring.map(c => c[0]);
-            const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
-            const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
-            return {
-              type: 'Feature',
-              properties: f.properties,
-              geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] }
-            };
+            if (f.geometry.type === 'Polygon') {
+              const coords = f.geometry.coordinates[0];
+              const ring = coords.slice(0, -1);
+              const lats = ring.map(c => c[1]);
+              const lngs = ring.map(c => c[0]);
+              const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
+              const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
+              return {
+                type: 'Feature',
+                properties: f.properties,
+                geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] }
+              };
+            } else if (f.geometry.type === 'MultiPolygon') {
+              // Use first polygon for centroid calculation
+              const coords = f.geometry.coordinates[0][0];
+              const ring = coords.slice(0, -1);
+              const lats = ring.map(c => c[1]);
+              const lngs = ring.map(c => c[0]);
+              const centroidLat = lats.reduce((a, b) => a + b) / lats.length;
+              const centroidLng = lngs.reduce((a, b) => a + b) / lngs.length;
+              return {
+                type: 'Feature',
+                properties: f.properties,
+                geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] }
+              };
+            }
+            return null;
           }).filter(f => f);
 
           layers.parcelCentroids = L.geoJSON({ type: 'FeatureCollection', features: centroids }, {
@@ -717,7 +751,7 @@ const zoom = siteConfig.map.zoom;
       // Load service lines
       async function loadServiceLines() {
         try {
-          const res = await fetch(config.serviceLinesUrl, { cache: 'no-store' });
+          const res = await fetch(config.serviceLinesUrl);
           if (!res.ok) throw new Error(`Failed to load service lines (${res.status})`);
           data.serviceLines = await res.json();
           
@@ -751,7 +785,7 @@ const zoom = siteConfig.map.zoom;
       // Load submissions
       async function loadSubmissions() {
         try {
-          const res = await fetch(config.submissionsUrl, { cache: 'no-store' });
+          const res = await fetch(config.submissionsUrl);
           if (!res.ok) throw new Error(`Failed to load submissions (${res.status})`);
           data.submissions = await res.json();
           
@@ -1046,6 +1080,7 @@ const zoom = siteConfig.map.zoom;
           makeDraggable(document.getElementById(id));
         });
 
+        setupPanelControls();
         setupSearch();
         setupLayerToggles();
 
