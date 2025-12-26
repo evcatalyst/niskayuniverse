@@ -94,8 +94,21 @@ Other legacy workflows/configs were removed to keep this track canonical.
 ### Main UI (`/`)
 Public-facing portal with service line map, resident submission form, and address autocomplete.
 
+### Water Distribution Dashboard (`/dashboard`)
+**NEW** - User-friendly, minimalist water distribution dashboard designed following principles of simplicity and clarity:
+- **Full-screen interactive map** with OpenStreetMap tiles (no API keys required)
+- **Integrated data layers**: Parcel boundaries with building age choropleth, service lines, and resident submissions
+- **LOD (Level of Detail) switching**: Automatic transition between parcel centroids (low zoom) and full polygons (high zoom) for optimal performance
+- **Minimalist controls**: Clean layer toggles and floating panels with smooth transitions
+- **Building age visualization**: Color-coded parcels showing construction eras (Pre-1920, 1920-1950, Lead Era 1951-1986, Post-1986)
+- **Data attribution**: Comprehensive "About/Data Sources" panel crediting all open data sources
+- **Mobile responsive**: Touch-friendly interface that works on all devices
+- **Accessible design**: High contrast, readable typography, and intuitive navigation
+
+The dashboard emphasizes "bringing order to complexity" with a clean, Apple-inspired aesthetic while maintaining powerful data visualization capabilities.
+
 ### Analytics Dashboard (`/analytics`)
-**NEW** - Professional full-screen analytics interface featuring:
+Professional full-screen analytics interface featuring:
 - Full-screen interactive map with all data layers
 - Minimizable, draggable overlay panels for search, layer control, and statistics
 - Historical data timeline chart showing pH and lead levels over time

@@ -1,0 +1,941 @@
+---
+import '../styles/global.css';
+import { siteConfig, withBasePath } from '../lib/siteConfig.js';
+
+const baseHref = withBasePath('/');
+const serviceLinesUrl = withBasePath(siteConfig.dataPaths.serviceLines);
+const submissionsUrl = withBasePath(siteConfig.dataPaths.submissions);
+const parcelsUrl = withBasePath('data/parcels_nys.geojson');
+const [lat, lng] = siteConfig.map.center;
+const zoom = siteConfig.map.zoom;
+---
+
+<!doctype html>
+<html lang="en" data-base-path={baseHref} data-service-lines={serviceLinesUrl} data-submissions={submissionsUrl} data-parcels={parcelsUrl}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{siteConfig.municipalityName} Water Dashboard</title>
+    <base href={baseHref} />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      /* Reset and Base Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        overflow: hidden;
+      }
+
+      /* Full-screen Map Container */
+      #map-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 0;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Header - Minimalist, Floating */
+      header {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 12px 32px;
+        border-radius: 999px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      header h1 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+
+      .water-icon {
+        width: 20px;
+        height: 20px;
+        color: #0ea5e9;
+      }
+
+      /* Layer Controls - Minimalist Toggle Panel */
+      .controls-panel {
+        position: fixed;
+        top: 90px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        min-width: 200px;
+        max-width: 280px;
+      }
+
+      .controls-panel h3 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .controls-panel label {
+        display: flex;
+        align-items: center;
+        margin: 8px 0;
+        font-size: 14px;
+        color: #475569;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .controls-panel label:hover {
+        color: #0ea5e9;
+      }
+
+      .controls-panel input[type="checkbox"] {
+        margin-right: 8px;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+      }
+
+      /* Information Panel - Slide-in from Bottom */
+      .info-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 24px 32px;
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+        box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.12);
+        z-index: 1000;
+        transform: translateY(calc(100% - 60px));
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+
+      .info-panel.expanded {
+        transform: translateY(0);
+      }
+
+      .info-panel-handle {
+        width: 40px;
+        height: 4px;
+        background: #cbd5e1;
+        border-radius: 2px;
+        margin: 0 auto 16px;
+        cursor: pointer;
+      }
+
+      .info-panel h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 16px;
+      }
+
+      .info-content {
+        display: none;
+      }
+
+      .info-panel.expanded .info-content {
+        display: block;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .info-item {
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+      }
+
+      .info-item label {
+        display: block;
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+      }
+
+      .info-item .value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      /* Legend - Clean, Bottom Left */
+      .legend {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        max-width: 220px;
+      }
+
+      .legend h4 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .legend-section {
+        margin-bottom: 12px;
+      }
+
+      .legend-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .legend-section-title {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 6px 0;
+        font-size: 13px;
+        color: #475569;
+      }
+
+      .legend-color {
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+      }
+
+      /* About Panel - Modal Overlay */
+      .about-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .about-panel.visible {
+        display: flex;
+      }
+
+      .about-content {
+        background: white;
+        padding: 32px;
+        border-radius: 16px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .about-content h2 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: #0f172a;
+      }
+
+      .about-content h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 20px;
+        margin-bottom: 8px;
+        color: #334155;
+      }
+
+      .about-content p,
+      .about-content li {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #475569;
+        margin-bottom: 12px;
+      }
+
+      .about-content ul {
+        padding-left: 20px;
+      }
+
+      .about-content a {
+        color: #0ea5e9;
+        text-decoration: none;
+      }
+
+      .about-content a:hover {
+        text-decoration: underline;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #f1f5f9;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #64748b;
+        transition: all 0.2s;
+      }
+
+      .close-btn:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      /* About Button */
+      .about-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: none;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        transition: all 0.2s;
+      }
+
+      .about-btn:hover {
+        background: white;
+        color: #0ea5e9;
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      /* Leaflet Popup Customization */
+      .leaflet-popup-content {
+        margin: 12px 16px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .leaflet-popup-content strong {
+        color: #0f172a;
+        font-weight: 600;
+      }
+
+      .popup-row {
+        margin: 6px 0;
+        color: #475569;
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        header {
+          top: 12px;
+          padding: 10px 20px;
+        }
+
+        header h1 {
+          font-size: 14px;
+        }
+
+        .controls-panel {
+          top: 70px;
+          right: 12px;
+          padding: 12px 16px;
+          min-width: 160px;
+        }
+
+        .legend {
+          bottom: 80px;
+          left: 12px;
+          padding: 12px 16px;
+        }
+
+        .info-panel {
+          padding: 20px 24px;
+        }
+
+        .about-btn {
+          top: 12px;
+          right: 12px;
+          padding: 8px 14px;
+          font-size: 13px;
+        }
+
+        .about-content {
+          padding: 24px;
+          margin: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <svg class="water-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+      </svg>
+      <h1>{siteConfig.municipalityName} Water Distribution Dashboard</h1>
+    </header>
+
+    <!-- About Button -->
+    <button class="about-btn" id="about-btn">About / Data Sources</button>
+
+    <!-- Controls Panel -->
+    <aside class="controls-panel">
+      <h3>Layers</h3>
+      <label>
+        <input type="checkbox" id="toggle-parcels" checked />
+        Parcel Boundaries
+      </label>
+      <label>
+        <input type="checkbox" id="toggle-service-lines" checked />
+        Service Lines
+      </label>
+      <label>
+        <input type="checkbox" id="toggle-submissions" checked />
+        Resident Submissions
+      </label>
+    </aside>
+
+    <!-- Legend -->
+    <aside class="legend">
+      <h4>Legend</h4>
+      
+      <div class="legend-section">
+        <div class="legend-section-title">Building Age</div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #7c2d12;"></div>
+          <span>Pre-1920</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #ea580c;"></div>
+          <span>1920–1950</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #fbbf24;"></div>
+          <span>1951–1986 (Lead Era)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #4ade80;"></div>
+          <span>Post-1986</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #94a3b8;"></div>
+          <span>Unknown</span>
+        </div>
+      </div>
+
+      <div class="legend-section">
+        <div class="legend-section-title">Data Points</div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #0ea5e9;"></div>
+          <span>Service Lines</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #f97316;"></div>
+          <span>Submissions</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Information Panel -->
+    <section class="info-panel" id="info-panel">
+      <div class="info-panel-handle" id="panel-handle"></div>
+      <h2>Water System Overview</h2>
+      <div class="info-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>System Name</label>
+            <div class="value">Town of Niskayuna</div>
+          </div>
+          <div class="info-item">
+            <label>Population Served</label>
+            <div class="value">~21,000</div>
+          </div>
+          <div class="info-item">
+            <label>Water Source</label>
+            <div class="value">Groundwater Wells</div>
+          </div>
+          <div class="info-item">
+            <label>Supplier</label>
+            <div class="value">Self-supplied</div>
+          </div>
+        </div>
+        <p style="margin-top: 16px; font-size: 14px; color: #64748b; line-height: 1.6;">
+          This dashboard provides a comprehensive view of the water distribution infrastructure and quality data for the Town of Niskayuna. 
+          Click on map features to explore detailed information about parcels, service lines, and resident-submitted water quality data.
+        </p>
+      </div>
+    </section>
+
+    <!-- About Panel (Modal) -->
+    <div class="about-panel" id="about-panel">
+      <div class="about-content">
+        <button class="close-btn" id="close-about" aria-label="Close">×</button>
+        <h2>About This Dashboard</h2>
+        <p>
+          This open-data-driven water distribution dashboard provides transparent access to water infrastructure and quality information 
+          for the Town of Niskayuna, NY. The platform is designed with simplicity and clarity in mind, making complex data accessible 
+          to residents, board members, and municipal staff.
+        </p>
+
+        <h3>Design Philosophy</h3>
+        <p>
+          Following principles of minimalism and user-centered design, this dashboard emphasizes clarity over clutter. 
+          Every element serves a purpose, providing powerful insights while maintaining an intuitive interface that requires 
+          no technical expertise to navigate.
+        </p>
+
+        <h3>Data Sources</h3>
+        <ul>
+          <li>
+            <strong>Public Water Supply Service Areas:</strong> NYS Department of Environmental Conservation 
+            (<a href="https://gis.ny.gov" target="_blank" rel="noopener">gis.ny.gov</a>)
+          </li>
+          <li>
+            <strong>Tax Parcel Data:</strong> NYS GIS Clearinghouse - Public Tax Parcels 
+            (<a href="https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer" target="_blank" rel="noopener">NYS Tax Parcels API</a>)
+          </li>
+          <li>
+            <strong>Service Line Inventory:</strong> Town of Niskayuna Water Department
+          </li>
+          <li>
+            <strong>Resident Submissions:</strong> Community-sourced water quality testing data
+          </li>
+          <li>
+            <strong>Base Map:</strong> OpenStreetMap contributors 
+            (<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>)
+          </li>
+        </ul>
+
+        <h3>Technology Stack</h3>
+        <p>
+          Built with open-source technologies and hosted on GitHub Pages, this dashboard requires no API keys or proprietary services:
+        </p>
+        <ul>
+          <li><strong>Mapping:</strong> Leaflet.js with OpenStreetMap tiles</li>
+          <li><strong>Hosting:</strong> GitHub Pages (free, static hosting)</li>
+          <li><strong>Automation:</strong> GitHub Actions for data updates</li>
+          <li><strong>Framework:</strong> Astro (static site generation)</li>
+        </ul>
+
+        <h3>White-Labeling</h3>
+        <p>
+          This dashboard template can be easily adapted for other municipalities by updating the configuration file 
+          and swapping data sources. No code changes required for basic customization.
+        </p>
+
+        <h3>Open Source</h3>
+        <p>
+          This project is open source and available on GitHub. Contributions, feedback, and adaptations are welcome.
+        </p>
+      </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+
+    <script define:vars={{ lat, lng, zoom }}>
+      // Configuration
+      const config = {
+        basePath: document.documentElement.dataset.basePath,
+        serviceLinesUrl: document.documentElement.dataset.serviceLines,
+        submissionsUrl: document.documentElement.dataset.submissions,
+        parcelsUrl: document.documentElement.dataset.parcels,
+        mapCenter: [lat, lng],
+        mapZoom: zoom,
+      };
+
+      // Map and layer references
+      let map;
+      let parcelPolygonLayer = null;
+      let parcelCentroidLayer = null;
+      let serviceLineLayer = null;
+      let submissionLayer = null;
+
+      // LOD threshold
+      const LOD_ZOOM_THRESHOLD = 15;
+
+      // Toggle states
+      let showParcels = true;
+      let showServiceLines = true;
+      let showSubmissions = true;
+
+      // Color mapping for building age
+      function getAgeColor(yearBuilt) {
+        if (!yearBuilt || yearBuilt === null) return '#94a3b8';
+        if (yearBuilt < 1920) return '#7c2d12';
+        if (yearBuilt >= 1920 && yearBuilt <= 1950) return '#ea580c';
+        if (yearBuilt >= 1951 && yearBuilt <= 1986) return '#fbbf24';
+        return '#4ade80';
+      }
+
+      function getAgeCategory(yearBuilt) {
+        if (!yearBuilt || yearBuilt === null) return 'Unknown';
+        if (yearBuilt < 1920) return 'Pre-1920';
+        if (yearBuilt >= 1920 && yearBuilt <= 1950) return '1920–1950';
+        if (yearBuilt >= 1951 && yearBuilt <= 1986) return '1951–1986 (Lead Era)';
+        return 'Post-1986';
+      }
+
+      // HTML escaping for security
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // Create parcel popup content
+      function createParcelPopup(props) {
+        const yearBuilt = escapeHtml(props.year_built || 'Unknown');
+        const ageCategory = escapeHtml(getAgeCategory(props.year_built));
+        const address = escapeHtml(props.address || props.street_addr || 'N/A');
+        const parcelId = escapeHtml(props.parcel_id || 'N/A');
+        
+        return `
+          <strong>${address}</strong>
+          <div class="popup-row"><strong>Parcel ID:</strong> ${parcelId}</div>
+          <div class="popup-row"><strong>Year Built:</strong> ${yearBuilt}</div>
+          <div class="popup-row"><strong>Age Category:</strong> ${ageCategory}</div>
+          ${props.owner_name ? `<div class="popup-row"><strong>Owner:</strong> ${escapeHtml(props.owner_name)}</div>` : ''}
+        `;
+      }
+
+      // Create service line popup content
+      function createServiceLinePopup(props) {
+        const address = escapeHtml(props.address || 'Unknown address');
+        const privateMaterial = props.private_material ? escapeHtml(props.private_material) : 'Unknown';
+        const publicMaterial = props.public_material ? escapeHtml(props.public_material) : 'Unknown';
+        const status = props.status ? escapeHtml(props.status) : 'Unknown';
+        
+        return `
+          <strong>${address}</strong>
+          <div class="popup-row"><strong>Private Material:</strong> ${privateMaterial}</div>
+          <div class="popup-row"><strong>Public Material:</strong> ${publicMaterial}</div>
+          <div class="popup-row"><strong>Status:</strong> ${status}</div>
+          ${props.updated ? `<div class="popup-row"><strong>Updated:</strong> ${escapeHtml(props.updated)}</div>` : ''}
+        `;
+      }
+
+      // Create submission popup content
+      function createSubmissionPopup(entry) {
+        const address = escapeHtml(entry.address || 'Unknown');
+        const summary = [
+          entry.ph ? `pH: ${entry.ph}` : null,
+          entry.tds ? `TDS: ${entry.tds} ppm` : null,
+          entry.leadPpb ? `Lead: ${entry.leadPpb} ppb` : null,
+        ].filter(Boolean).join('<br/>');
+        
+        return `
+          <strong>${address}</strong>
+          ${summary ? `<div class="popup-row">${summary}</div>` : ''}
+          <div class="popup-row">${escapeHtml(entry.submittedAt || '')}</div>
+        `;
+      }
+
+      // Load parcel data
+      async function loadParcels() {
+        try {
+          const res = await fetch(config.parcelsUrl);
+          if (!res.ok) throw new Error(`Failed to load parcels (${res.status})`);
+          const data = await res.json();
+
+          // Create polygon layer (shown at high zoom)
+          parcelPolygonLayer = L.geoJSON(data, {
+            style: (feature) => ({
+              fillColor: getAgeColor(feature.properties.year_built),
+              fillOpacity: 0.5,
+              color: '#64748b',
+              weight: 1,
+              opacity: 0.6,
+            }),
+            onEachFeature: (feature, layer) => {
+              layer.bindPopup(createParcelPopup(feature.properties));
+              layer.on('mouseover', function () {
+                this.setStyle({ weight: 2, opacity: 1 });
+              });
+              layer.on('mouseout', function () {
+                this.setStyle({ weight: 1, opacity: 0.6 });
+              });
+            },
+          });
+
+          // Create centroid layer (shown at low zoom)
+          const centroids = {
+            type: 'FeatureCollection',
+            features: data.features.map((f) => {
+              const coords = f.geometry.type === 'Polygon' 
+                ? f.geometry.coordinates[0] 
+                : f.geometry.coordinates[0][0];
+              const lats = coords.map((c) => c[1]);
+              const lngs = coords.map((c) => c[0]);
+              const centroidLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+              const centroidLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+              
+              return {
+                type: 'Feature',
+                properties: f.properties,
+                geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] },
+              };
+            }),
+          };
+
+          parcelCentroidLayer = L.geoJSON(centroids, {
+            pointToLayer: (feature, latlng) => {
+              return L.circleMarker(latlng, {
+                radius: 4,
+                fillColor: getAgeColor(feature.properties.year_built),
+                color: '#64748b',
+                weight: 1,
+                opacity: 0.6,
+                fillOpacity: 0.7,
+              });
+            },
+            onEachFeature: (feature, layer) => {
+              layer.bindPopup(createParcelPopup(feature.properties));
+            },
+          });
+
+          updateParcelLOD();
+        } catch (error) {
+          console.error('Error loading parcels:', error);
+        }
+      }
+
+      // Update parcel LOD based on zoom
+      function updateParcelLOD() {
+        if (!showParcels) return;
+        
+        const currentZoom = map.getZoom();
+        
+        if (currentZoom >= LOD_ZOOM_THRESHOLD) {
+          if (parcelCentroidLayer && map.hasLayer(parcelCentroidLayer)) {
+            map.removeLayer(parcelCentroidLayer);
+          }
+          if (parcelPolygonLayer && !map.hasLayer(parcelPolygonLayer)) {
+            parcelPolygonLayer.addTo(map);
+          }
+        } else {
+          if (parcelPolygonLayer && map.hasLayer(parcelPolygonLayer)) {
+            map.removeLayer(parcelPolygonLayer);
+          }
+          if (parcelCentroidLayer && !map.hasLayer(parcelCentroidLayer)) {
+            parcelCentroidLayer.addTo(map);
+          }
+        }
+      }
+
+      // Load service lines
+      async function loadServiceLines() {
+        try {
+          const res = await fetch(config.serviceLinesUrl);
+          if (!res.ok) throw new Error(`Failed to load service lines (${res.status})`);
+          const data = await res.json();
+
+          serviceLineLayer = L.geoJSON(data, {
+            pointToLayer: (feature, latlng) => {
+              const status = (feature.properties?.status || '').toLowerCase();
+              const color = status === 'verified' ? '#22c55e' : '#0ea5e9';
+              return L.circleMarker(latlng, {
+                radius: 6,
+                color: color,
+                weight: 2,
+                fillColor: color,
+                fillOpacity: 0.7,
+              });
+            },
+            onEachFeature: (feature, layer) => {
+              layer.bindPopup(createServiceLinePopup(feature.properties));
+            },
+          });
+
+          if (showServiceLines) {
+            serviceLineLayer.addTo(map);
+          }
+        } catch (error) {
+          console.error('Error loading service lines:', error);
+        }
+      }
+
+      // Load submissions
+      async function loadSubmissions() {
+        try {
+          const res = await fetch(config.submissionsUrl);
+          if (!res.ok) throw new Error(`Failed to load submissions (${res.status})`);
+          const submissions = await res.json();
+
+          const features = submissions
+            .filter((s) => s.coordinates && s.coordinates.lat && s.coordinates.lng)
+            .map((s) => ({
+              type: 'Feature',
+              properties: s,
+              geometry: { type: 'Point', coordinates: [s.coordinates.lng, s.coordinates.lat] },
+            }));
+
+          submissionLayer = L.geoJSON({ type: 'FeatureCollection', features }, {
+            pointToLayer: (feature, latlng) => {
+              return L.circleMarker(latlng, {
+                radius: 6,
+                color: '#f97316',
+                weight: 2,
+                fillColor: '#f97316',
+                fillOpacity: 0.8,
+              });
+            },
+            onEachFeature: (feature, layer) => {
+              layer.bindPopup(createSubmissionPopup(feature.properties));
+            },
+          });
+
+          if (showSubmissions) {
+            submissionLayer.addTo(map);
+          }
+        } catch (error) {
+          console.error('Error loading submissions:', error);
+        }
+      }
+
+      // Toggle layer visibility
+      function toggleLayer(layerRef, show) {
+        if (!layerRef) return;
+        if (show && !map.hasLayer(layerRef)) {
+          layerRef.addTo(map);
+        } else if (!show && map.hasLayer(layerRef)) {
+          map.removeLayer(layerRef);
+        }
+      }
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initialize map
+        map = L.map('map', { scrollWheelZoom: true }).setView(config.mapCenter, config.mapZoom);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        // Load data layers
+        loadParcels();
+        loadServiceLines();
+        loadSubmissions();
+
+        // Listen for zoom changes
+        map.on('zoomend', updateParcelLOD);
+
+        // Layer toggles
+        document.getElementById('toggle-parcels').addEventListener('change', (e) => {
+          showParcels = e.target.checked;
+          if (showParcels) {
+            updateParcelLOD();
+          } else {
+            toggleLayer(parcelPolygonLayer, false);
+            toggleLayer(parcelCentroidLayer, false);
+          }
+        });
+
+        document.getElementById('toggle-service-lines').addEventListener('change', (e) => {
+          showServiceLines = e.target.checked;
+          toggleLayer(serviceLineLayer, showServiceLines);
+        });
+
+        document.getElementById('toggle-submissions').addEventListener('change', (e) => {
+          showSubmissions = e.target.checked;
+          toggleLayer(submissionLayer, showSubmissions);
+        });
+
+        // Info panel toggle
+        const infoPanel = document.getElementById('info-panel');
+        const panelHandle = document.getElementById('panel-handle');
+        
+        panelHandle.addEventListener('click', () => {
+          infoPanel.classList.toggle('expanded');
+        });
+
+        // About panel toggle
+        const aboutPanel = document.getElementById('about-panel');
+        const aboutBtn = document.getElementById('about-btn');
+        const closeAbout = document.getElementById('close-about');
+
+        aboutBtn.addEventListener('click', () => {
+          aboutPanel.classList.add('visible');
+        });
+
+        closeAbout.addEventListener('click', () => {
+          aboutPanel.classList.remove('visible');
+        });
+
+        aboutPanel.addEventListener('click', (e) => {
+          if (e.target === aboutPanel) {
+            aboutPanel.classList.remove('visible');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
