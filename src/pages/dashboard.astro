@@ -6,12 +6,13 @@ const baseHref = withBasePath('/');
 const serviceLinesUrl = withBasePath(siteConfig.dataPaths.serviceLines);
 const submissionsUrl = withBasePath(siteConfig.dataPaths.submissions);
 const parcelsUrl = withBasePath('data/parcels_nys.geojson');
+const serviceAreaUrl = withBasePath('data/water_service_area.geojson');
 const [lat, lng] = siteConfig.map.center;
 const zoom = siteConfig.map.zoom;
 ---
 
 <!doctype html>
-<html lang="en" data-base-path={baseHref} data-service-lines={serviceLinesUrl} data-submissions={submissionsUrl} data-parcels={parcelsUrl}>
+<html lang="en" data-base-path={baseHref} data-service-lines={serviceLinesUrl} data-submissions={submissionsUrl} data-parcels={parcelsUrl} data-service-area={serviceAreaUrl}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -443,6 +444,10 @@ const zoom = siteConfig.map.zoom;
     <aside class="controls-panel">
       <h3>Layers</h3>
       <label>
+        <input type="checkbox" id="toggle-service-area" checked />
+        Service Area Boundary
+      </label>
+      <label>
         <input type="checkbox" id="toggle-parcels" checked />
         Parcel Boundaries
       </label>
@@ -481,6 +486,14 @@ const zoom = siteConfig.map.zoom;
         <div class="legend-item">
           <div class="legend-color" style="background-color: #94a3b8;"></div>
           <span>Unknown</span>
+        </div>
+      </div>
+
+      <div class="legend-section">
+        <div class="legend-section-title">Boundaries</div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #0ea5e9; opacity: 0.3; border: 2px dashed #0ea5e9;"></div>
+          <span>Service Area</span>
         </div>
       </div>
 
@@ -603,12 +616,14 @@ const zoom = siteConfig.map.zoom;
         serviceLinesUrl: document.documentElement.dataset.serviceLines,
         submissionsUrl: document.documentElement.dataset.submissions,
         parcelsUrl: document.documentElement.dataset.parcels,
+        serviceAreaUrl: document.documentElement.dataset.serviceArea,
         mapCenter: [lat, lng],
         mapZoom: zoom,
       };
 
       // Map and layer references
       let map;
+      let serviceAreaLayer = null;
       let parcelPolygonLayer = null;
       let parcelCentroidLayer = null;
       let serviceLineLayer = null;
@@ -618,6 +633,7 @@ const zoom = siteConfig.map.zoom;
       const LOD_ZOOM_THRESHOLD = 15;
 
       // Toggle states
+      let showServiceArea = true;
       let showParcels = true;
       let showServiceLines = true;
       let showSubmissions = true;
@@ -696,6 +712,74 @@ const zoom = siteConfig.map.zoom;
           ${summary ? `<div class="popup-row">${summary}</div>` : ''}
           <div class="popup-row">${escapeHtml(entry.submittedAt || '')}</div>
         `;
+      }
+
+      // Load water service area boundary
+      async function loadServiceArea() {
+        try {
+          const res = await fetch(config.serviceAreaUrl);
+          if (!res.ok) {
+            console.log('Service area data not available');
+            return;
+          }
+          const data = await res.json();
+
+          serviceAreaLayer = L.geoJSON(data, {
+            style: {
+              fillColor: '#0ea5e9',
+              fillOpacity: 0.1,
+              color: '#0ea5e9',
+              weight: 3,
+              opacity: 0.7,
+              dashArray: '8, 4',
+            },
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties;
+              const content = `
+                <strong>${escapeHtml(props.PWS_NAME || 'Water Service Area')}</strong>
+                ${props.POPULATION_SERVED ? `<div class="popup-row"><strong>Population Served:</strong> ${escapeHtml(props.POPULATION_SERVED.toLocaleString())}</div>` : ''}
+                ${props.WATER_SOURCE_TYPE ? `<div class="popup-row"><strong>Water Source:</strong> ${escapeHtml(props.WATER_SOURCE_TYPE)}</div>` : ''}
+                ${props.SUPPLIER_TYPE ? `<div class="popup-row"><strong>Supplier:</strong> ${escapeHtml(props.SUPPLIER_TYPE)}</div>` : ''}
+                ${props.SOURCE_WATER ? `<div class="popup-row"><strong>Source:</strong> ${escapeHtml(props.SOURCE_WATER)}</div>` : ''}
+              `;
+              layer.bindPopup(content);
+            },
+          });
+
+          if (showServiceArea) {
+            serviceAreaLayer.addTo(map);
+          }
+
+          // Update info panel with service area data if available
+          if (data.features && data.features[0]) {
+            const props = data.features[0].properties;
+            updateInfoPanel(props);
+          }
+        } catch (error) {
+          console.log('Service area not loaded:', error.message);
+        }
+      }
+
+      // Update info panel with service area data
+      function updateInfoPanel(props) {
+        const systemName = document.querySelector('.info-item .value');
+        const items = document.querySelectorAll('.info-item');
+        
+        if (systemName && props.PWS_NAME) {
+          systemName.textContent = props.PWS_NAME;
+        }
+        
+        if (items[1] && props.POPULATION_SERVED) {
+          items[1].querySelector('.value').textContent = `~${props.POPULATION_SERVED.toLocaleString()}`;
+        }
+        
+        if (items[2] && props.WATER_SOURCE_TYPE) {
+          items[2].querySelector('.value').textContent = props.WATER_SOURCE_TYPE;
+        }
+        
+        if (items[3] && props.SUPPLIER_TYPE) {
+          items[3].querySelector('.value').textContent = props.SUPPLIER_TYPE;
+        }
       }
 
       // Load parcel data
@@ -881,6 +965,7 @@ const zoom = siteConfig.map.zoom;
         }).addTo(map);
 
         // Load data layers
+        loadServiceArea();
         loadParcels();
         loadServiceLines();
         loadSubmissions();
@@ -889,6 +974,11 @@ const zoom = siteConfig.map.zoom;
         map.on('zoomend', updateParcelLOD);
 
         // Layer toggles
+        document.getElementById('toggle-service-area').addEventListener('change', (e) => {
+          showServiceArea = e.target.checked;
+          toggleLayer(serviceAreaLayer, showServiceArea);
+        });
+
         document.getElementById('toggle-parcels').addEventListener('change', (e) => {
           showParcels = e.target.checked;
           if (showParcels) {
