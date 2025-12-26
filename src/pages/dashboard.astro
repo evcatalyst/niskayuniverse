@@ -813,9 +813,17 @@ const zoom = siteConfig.map.zoom;
           const centroids = {
             type: 'FeatureCollection',
             features: data.features.map((f) => {
-              const coords = f.geometry.type === 'Polygon' 
-                ? f.geometry.coordinates[0] 
-                : f.geometry.coordinates[0][0];
+              // More robust geometry handling for Polygon and MultiPolygon
+              let coords;
+              if (f.geometry.type === 'Polygon') {
+                coords = f.geometry.coordinates[0]; // Outer ring of polygon
+              } else if (f.geometry.type === 'MultiPolygon') {
+                coords = f.geometry.coordinates[0][0]; // Outer ring of first polygon
+              } else {
+                console.warn('Unsupported geometry type:', f.geometry.type);
+                return null;
+              }
+              
               const lats = coords.map((c) => c[1]);
               const lngs = coords.map((c) => c[0]);
               const centroidLat = lats.reduce((a, b) => a + b, 0) / lats.length;
@@ -826,7 +834,7 @@ const zoom = siteConfig.map.zoom;
                 properties: f.properties,
                 geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] },
               };
-            }),
+            }).filter(Boolean), // Remove any null entries
           };
 
           parcelCentroidLayer = L.geoJSON(centroids, {
