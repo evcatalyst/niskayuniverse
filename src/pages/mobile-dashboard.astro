@@ -671,6 +671,9 @@ const zoom = siteConfig.map.zoom;
         // Remove any leading slashes to ensure relative path
         const cleanPath = path.replace(/^\/+/, '');
         // Use document.baseURI for robust base path resolution
+        // This is more reliable than config.basePath because it automatically
+        // handles the current page's base path, working correctly in both
+        // development and production (GitHub Pages) environments
         return new URL(cleanPath, document.baseURI).toString();
       }
 
