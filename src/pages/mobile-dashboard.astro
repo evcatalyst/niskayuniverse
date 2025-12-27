@@ -341,6 +341,21 @@ const zoom = siteConfig.map.zoom;
         flex: 1;
       }
 
+      .layer-status {
+        font-size: 11px;
+        color: #64748b;
+        margin-left: 8px;
+      }
+
+      .layer-status.loading {
+        color: #0ea5e9;
+      }
+
+      .layer-status.error {
+        color: #dc2626;
+        cursor: pointer;
+      }
+
       /* ===== Legend Modal ===== */
       .modal-overlay {
         position: fixed;
@@ -634,6 +649,8 @@ const zoom = siteConfig.map.zoom;
       let registry = null;
       let layers = new Map(); // layerId -> Leaflet layer
       let layerVisibility = new Map(); // layerId -> boolean
+      let layerLoadState = new Map(); // layerId -> 'loading' | 'loaded' | 'error'
+      let layerLoadError = new Map(); // layerId -> error message
       let currentMode = 'overview';
       let panelState = 'peek'; // peek | mid | expanded
 
@@ -651,16 +668,56 @@ const zoom = siteConfig.map.zoom;
       function withBasePath(path) {
         if (!path) return path;
         if (path.startsWith('http')) return path;
-        const base = config.basePath || '/';
-        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-        return base + cleanPath;
+        // Remove any leading slashes to ensure relative path
+        const cleanPath = path.replace(/^\/+/, '');
+        // Use document.baseURI for robust base path resolution
+        return new URL(cleanPath, document.baseURI).toString();
+      }
+
+      function updateLayerStatus(layerId, state, errorMsg = null) {
+        layerLoadState.set(layerId, state);
+        if (errorMsg) {
+          layerLoadError.set(layerId, errorMsg);
+        }
+        
+        // Update the UI
+        const toggle = document.querySelector(`label.layer-toggle[data-layer-id="${layerId}"]`);
+        if (!toggle) return;
+        
+        // Remove existing status
+        const existingStatus = toggle.querySelector('.layer-status');
+        if (existingStatus) existingStatus.remove();
+        
+        // Add new status
+        if (state === 'loading') {
+          const status = document.createElement('span');
+          status.className = 'layer-status loading';
+          status.textContent = 'Loading...';
+          toggle.appendChild(status);
+        } else if (state === 'error' && errorMsg) {
+          const status = document.createElement('span');
+          status.className = 'layer-status error';
+          status.textContent = '⚠ Failed';
+          status.title = errorMsg;
+          status.style.cursor = 'pointer';
+          status.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            alert(`Failed to load layer:\n${errorMsg}`);
+          });
+          toggle.appendChild(status);
+        }
       }
 
       // ===== Load Registry =====
       async function loadRegistry() {
         try {
+          console.log(`Loading registry from: ${config.registryUrl}`);
           const res = await fetch(config.registryUrl);
-          if (!res.ok) throw new Error(`Failed to load registry (${res.status})`);
+          if (!res.ok) {
+            console.error(`Failed to load registry: ${res.status} ${res.statusText} from ${config.registryUrl}`);
+            throw new Error(`Failed to load registry (${res.status})`);
+          }
           registry = await res.json();
           console.log('Registry loaded:', registry);
           return registry;
@@ -790,7 +847,7 @@ const zoom = siteConfig.map.zoom;
         });
       }
 
-      function setMode(modeId) {
+      async function setMode(modeId) {
         const mode = registry.modes.find(m => m.id === modeId);
         if (!mode) return;
 
@@ -803,17 +860,17 @@ const zoom = siteConfig.map.zoom;
 
         // Apply layer visibility
         if (mode.enable_layers) {
-          mode.enable_layers.forEach(layerId => {
+          for (const layerId of mode.enable_layers) {
             layerVisibility.set(layerId, true);
-            updateLayerVisibility(layerId, true);
-          });
+            await updateLayerVisibility(layerId, true);
+          }
         }
 
         if (mode.disable_layers) {
-          mode.disable_layers.forEach(layerId => {
+          for (const layerId of mode.disable_layers) {
             layerVisibility.set(layerId, false);
-            updateLayerVisibility(layerId, false);
-          });
+            await updateLayerVisibility(layerId, false);
+          }
         }
 
         updateLayerToggles();
@@ -859,10 +916,19 @@ const zoom = siteConfig.map.zoom;
           html += `<div class="layer-group"><div class="layer-group-title">${escapeHtml(groupName)}</div>`;
           groupLayers.forEach(layer => {
             const visible = layerVisibility.get(layer.id) !== false;
+            const loadState = layerLoadState.get(layer.id);
+            const errorMsg = layerLoadError.get(layer.id);
+            let statusHtml = '';
+            if (loadState === 'loading') {
+              statusHtml = '<span class="layer-status loading">Loading...</span>';
+            } else if (loadState === 'error' && errorMsg) {
+              statusHtml = `<span class="layer-status error" title="${escapeHtml(errorMsg)}">⚠ Failed</span>`;
+            }
             html += `
-              <label class="layer-toggle">
+              <label class="layer-toggle" data-layer-id="${escapeHtml(layer.id)}">
                 <input type="checkbox" data-layer="${escapeHtml(layer.id)}" ${visible ? 'checked' : ''} />
                 <span class="layer-label">${escapeHtml(layer.label)}</span>
+                ${statusHtml}
               </label>
             `;
           });
@@ -873,10 +939,10 @@ const zoom = siteConfig.map.zoom;
 
         // Add event listeners
         container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-          cb.addEventListener('change', (e) => {
+          cb.addEventListener('change', async (e) => {
             const layerId = e.target.dataset.layer;
             layerVisibility.set(layerId, e.target.checked);
-            updateLayerVisibility(layerId, e.target.checked);
+            await updateLayerVisibility(layerId, e.target.checked);
           });
         });
 
@@ -994,12 +1060,16 @@ const zoom = siteConfig.map.zoom;
 
       // ===== Layer Loading =====
       async function loadLayer(layerDef) {
+        updateLayerStatus(layerDef.id, 'loading');
         try {
           const path = withBasePath(layerDef.path);
+          console.log(`Loading layer ${layerDef.id} from: ${path}`);
           const res = await fetch(path);
           
           if (!res.ok) {
-            console.log(`Layer ${layerDef.id} not available (${res.status})`);
+            const errorMsg = `HTTP ${res.status} ${res.statusText} from ${path}`;
+            console.error(`Failed to load layer ${layerDef.id}: ${errorMsg}`);
+            updateLayerStatus(layerDef.id, 'error', errorMsg);
             return null;
           }
 
@@ -1025,7 +1095,7 @@ const zoom = siteConfig.map.zoom;
           const color = style.color || '#64748b';
 
           if (layerDef.geometry === 'point') {
-            return L.geoJSON(data, {
+            const layer = L.geoJSON(data, {
               pointToLayer: (feature, latlng) => {
                 return L.circleMarker(latlng, {
                   radius: style.point_radius || 5,
@@ -1042,8 +1112,10 @@ const zoom = siteConfig.map.zoom;
                 }
               }
             });
+            updateLayerStatus(layerDef.id, 'loaded');
+            return layer;
           } else if (layerDef.geometry === 'line') {
-            return L.geoJSON(data, {
+            const layer = L.geoJSON(data, {
               style: {
                 color: color,
                 weight: style.stroke_width || 2,
@@ -1051,8 +1123,10 @@ const zoom = siteConfig.map.zoom;
                 dashArray: style.dash ? style.dash.join(', ') : undefined
               }
             });
+            updateLayerStatus(layerDef.id, 'loaded');
+            return layer;
           } else if (layerDef.geometry === 'polygon') {
-            return L.geoJSON(data, {
+            const layer = L.geoJSON(data, {
               style: {
                 fillColor: color,
                 fillOpacity: style.fill_opacity || 0.1,
@@ -1061,11 +1135,16 @@ const zoom = siteConfig.map.zoom;
                 opacity: style.stroke_opacity || 0.5
               }
             });
+            updateLayerStatus(layerDef.id, 'loaded');
+            return layer;
           }
 
+          updateLayerStatus(layerDef.id, 'loaded');
           return null;
         } catch (error) {
+          const errorMsg = error.message || String(error);
           console.error(`Error loading layer ${layerDef.id}:`, error);
+          updateLayerStatus(layerDef.id, 'error', errorMsg);
           return null;
         }
       }
@@ -1082,8 +1161,26 @@ const zoom = siteConfig.map.zoom;
         return lines.length > 0 ? lines.join('<br/>') : null;
       }
 
-      function updateLayerVisibility(layerId, visible) {
-        const layer = layers.get(layerId);
+      async function updateLayerVisibility(layerId, visible) {
+        let layer = layers.get(layerId);
+        
+        // If toggling on and layer not loaded yet, load it now
+        if (visible && !layer) {
+          const layerDef = registry.layers.find(l => l.id === layerId);
+          if (layerDef) {
+            layer = await loadLayer(layerDef);
+            if (layer) {
+              layers.set(layerId, layer);
+            } else {
+              // Failed to load, uncheck the toggle
+              const checkbox = document.querySelector(`input[data-layer="${layerId}"]`);
+              if (checkbox) checkbox.checked = false;
+              layerVisibility.set(layerId, false);
+              return;
+            }
+          }
+        }
+        
         if (!layer) return;
 
         if (visible && !map.hasLayer(layer)) {
