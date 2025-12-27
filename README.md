@@ -107,6 +107,41 @@ Public-facing portal with service line map, resident submission form, and addres
 
 The dashboard emphasizes "bringing order to complexity" with a clean, Apple-inspired aesthetic while maintaining powerful data visualization capabilities.
 
+### Mobile Dashboard (`/mobile-dashboard`)
+**NEW** - Mobile-first water map interface following OpenInfraMap interaction patterns:
+- **Map-first layout**: Map always visible (25-40% minimum), never fully blocked
+- **Bottom sheet layers panel**: Three states - peek (80px), mid (55vh), expanded (85vh)
+- **Touch-optimized controls**: 44px minimum tap targets, iOS safe area support
+- **Progressive disclosure**: Modals for legend and data sources, non-blocking UI
+- **Registry-driven**: All layers, modes, and provenance from `config/layers.registry.json`
+- **Analysis modes**: Quick presets (Overview, Intrusion, Seepage, Stormwater) toggle layer sets
+- **Grouped layer toggles**: Background (radio), Boundaries, Data Points, Distribution, etc.
+- **Dynamic legend**: Shows only currently enabled layers, grouped by category
+- **Performance**: Lazy loading with minZoom thresholds, simplified geometries at low zoom
+
+#### Mobile UI Behavior
+
+**Panel States:**
+- **Peek** (default): 80px visible at bottom, shows "Layers" title and drag handle
+- **Mid**: ~55% of screen height, shows mode selector and layer groups
+- **Expanded**: ~85% of screen height, full layer list with scroll
+
+**Interaction:**
+- Tap drag handle to cycle: peek → mid → expanded → peek
+- Touch drag vertically to position panel smoothly
+- Tap "Layers" button (≡) in top-right to toggle peek/mid
+
+**Modals:**
+- **Legend/Key**: Tap "Key" link in header or swipe up legend to see all symbols
+- **About/Data Sources**: Tap "i" button (bottom-right) or "About" link in header
+- Both modals: tap backdrop or × button to close
+
+**Editing Layer Configuration:**
+- Edit `/public/config/layers.registry.json` to add/remove layers
+- Update `modes` array to define preset layer combinations
+- Modify `legend_profiles` to customize legend grouping per mode
+- Provenance metadata automatically populates About modal
+
 ### Analytics Dashboard (`/analytics`)
 Professional full-screen analytics interface featuring:
 - Full-screen interactive map with all data layers
