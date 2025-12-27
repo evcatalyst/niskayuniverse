@@ -937,12 +937,21 @@ const zoom = siteConfig.map.zoom;
 
         container.innerHTML = html;
 
-        // Add event listeners
+        // Add event listeners for checkboxes
         container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
           cb.addEventListener('change', async (e) => {
             const layerId = e.target.dataset.layer;
             layerVisibility.set(layerId, e.target.checked);
             await updateLayerVisibility(layerId, e.target.checked);
+          });
+        });
+
+        // Add event listeners for error status indicators
+        container.querySelectorAll('.layer-status.error').forEach(status => {
+          status.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            alert(`Failed to load layer:\n${status.title}`);
           });
         });
 
