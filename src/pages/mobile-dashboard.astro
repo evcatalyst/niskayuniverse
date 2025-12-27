@@ -1220,29 +1220,16 @@ const zoom = siteConfig.map.zoom;
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Load layers
+        // Initialize layer visibility from defaults (but don't load yet)
         for (const layerDef of registry.layers) {
-          // Respect minZoom - only load if we might show it
-          if (layerDef.min_zoom && layerDef.min_zoom > config.mapZoom + 3) {
-            console.log(`Skipping ${layerDef.id} - zoom too low`);
-            continue;
-          }
-
-          const layer = await loadLayer(layerDef);
-          if (layer) {
-            layers.set(layerDef.id, layer);
-            
-            const visible = layerDef.default_visible !== false;
-            layerVisibility.set(layerDef.id, visible);
-            
-            if (visible) layer.addTo(map);
-          }
+          const visible = layerDef.default_visible !== false;
+          layerVisibility.set(layerDef.id, visible);
         }
 
         // Render UI
         renderModeSelector();
         renderLayerToggles();
-        setMode(currentMode);
+        await setMode(currentMode); // This will load only the layers needed for the current mode
         renderProvenance();
       }
 
