@@ -867,7 +867,7 @@ const zoom = siteConfig.map.zoom;
                 <strong>${escapeHtml(layer.label)}</strong><br/>
                 <span style="font-size: 12px; color: #64748b;">
                   Source: ${escapeHtml(prov.source_name)}<br/>
-                  ${prov.source_url && prov.source_url !== 'Municipal Records' && prov.source_url !== 'Community-sourced' && prov.source_url !== 'Derived from road classification' && prov.source_url !== 'NYS DEC' ? 
+                  ${shouldDisplayUrl(prov.source_url) ? 
                     `URL: <a href="${escapeHtml(prov.source_url)}" target="_blank" rel="noopener">${escapeHtml(prov.source_url)}</a><br/>` : ''}
                   License: ${escapeHtml(prov.license)}<br/>
                   Completeness: ${escapeHtml(prov.completeness)}
@@ -1103,21 +1103,39 @@ const zoom = siteConfig.map.zoom;
         };
       }
 
-      // Color mapping for building age
+      // Helper to check if URL should be displayed
+      function shouldDisplayUrl(url) {
+        const nonLinkableUrls = ['Municipal Records', 'Community-sourced', 'Derived from road classification', 'NYS DEC'];
+        return url && !nonLinkableUrls.includes(url) && url.startsWith('http');
+      }
+
+      // Color mapping for building age (from registry or default)
+      const ageColorMap = [
+        { max: 1920, color: '#7c2d12', label: 'Pre-1920' },
+        { min: 1920, max: 1950, color: '#ea580c', label: '1920–1950' },
+        { min: 1951, max: 1986, color: '#fbbf24', label: '1951–1986 (Lead Era)' },
+        { min: 1986, color: '#4ade80', label: 'Post-1986' }
+      ];
+      const unknownAgeColor = '#94a3b8';
+
       function getAgeColor(yearBuilt) {
-        if (!yearBuilt || yearBuilt === null) return '#94a3b8';
-        if (yearBuilt < 1920) return '#7c2d12';
-        if (yearBuilt >= 1920 && yearBuilt <= 1950) return '#ea580c';
-        if (yearBuilt >= 1951 && yearBuilt <= 1986) return '#fbbf24';
-        return '#4ade80';
+        if (!yearBuilt || yearBuilt === null) return unknownAgeColor;
+        for (const range of ageColorMap) {
+          if ((!range.min || yearBuilt >= range.min) && (!range.max || yearBuilt < range.max)) {
+            return range.color;
+          }
+        }
+        return ageColorMap[ageColorMap.length - 1].color; // Default to post-1986
       }
 
       function getAgeCategory(yearBuilt) {
         if (!yearBuilt || yearBuilt === null) return 'Unknown';
-        if (yearBuilt < 1920) return 'Pre-1920';
-        if (yearBuilt >= 1920 && yearBuilt <= 1950) return '1920–1950';
-        if (yearBuilt >= 1951 && yearBuilt <= 1986) return '1951–1986 (Lead Era)';
-        return 'Post-1986';
+        for (const range of ageColorMap) {
+          if ((!range.min || yearBuilt >= range.min) && (!range.max || yearBuilt < range.max)) {
+            return range.label;
+          }
+        }
+        return ageColorMap[ageColorMap.length - 1].label;
       }
 
       // Create popup content based on layer type
