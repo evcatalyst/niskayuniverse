@@ -1,0 +1,33 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "PWS_NAME": "Town of Niskayuna",
+        "PWS_ID": "NY4633001",
+        "POPULATION_SERVED": 21000,
+        "WATER_SOURCE_TYPE": "Groundwater",
+        "SUPPLIER_TYPE": "Self-supplied",
+        "SOURCE_WATER": "Local aquifer wells",
+        "PROVENANCE": {
+          "source": "NYS DEC Public Water Supply Service Areas",
+          "source_url": "https://data.gis.ny.gov/",
+          "fetched_at": "2024-12-26T00:00:00Z"
+        }
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.920, 42.820],
+            [-73.920, 42.795],
+            [-73.870, 42.795],
+            [-73.870, 42.820],
+            [-73.920, 42.820]
+          ]
+        ]
+      }
+    }
+  ]
+}
