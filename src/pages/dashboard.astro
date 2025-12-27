@@ -3,16 +3,13 @@ import '../styles/global.css';
 import { siteConfig, withBasePath } from '../lib/siteConfig.js';
 
 const baseHref = withBasePath('/');
-const serviceLinesUrl = withBasePath(siteConfig.dataPaths.serviceLines);
-const submissionsUrl = withBasePath(siteConfig.dataPaths.submissions);
-const parcelsUrl = withBasePath('data/parcels_nys.geojson');
-const serviceAreaUrl = withBasePath('data/water_service_area.geojson');
+const registryUrl = withBasePath('config/layers.registry.json');
 const [lat, lng] = siteConfig.map.center;
 const zoom = siteConfig.map.zoom;
 ---
 
 <!doctype html>
-<html lang="en" data-base-path={baseHref} data-service-lines={serviceLinesUrl} data-submissions={submissionsUrl} data-parcels={parcelsUrl} data-service-area={serviceAreaUrl}>
+<html lang="en" data-base-path={baseHref} data-registry={registryUrl}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -123,6 +120,78 @@ const zoom = siteConfig.map.zoom;
         width: 16px;
         height: 16px;
         cursor: pointer;
+      }
+
+      /* Analysis Mode Selector */
+      .mode-selector {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .mode-selector-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .mode-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .mode-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #475569;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+      }
+
+      .mode-btn:hover {
+        border-color: #0ea5e9;
+        color: #0ea5e9;
+      }
+
+      .mode-btn.active {
+        background: #0ea5e9;
+        color: white;
+        border-color: #0ea5e9;
+      }
+
+      .mode-description {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 8px;
+        line-height: 1.4;
+      }
+
+      /* Layer toggles section */
+      .layer-toggles {
+        margin-top: 12px;
+      }
+
+      .layer-group {
+        margin-bottom: 8px;
+      }
+
+      .layer-group-title {
+        font-size: 10px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
       }
 
       /* Information Panel - Slide-in from Bottom */
@@ -442,71 +511,27 @@ const zoom = siteConfig.map.zoom;
 
     <!-- Controls Panel -->
     <aside class="controls-panel">
+      <div class="mode-selector">
+        <span class="mode-selector-label">Analysis Mode</span>
+        <div class="mode-buttons" id="mode-buttons">
+          <!-- Mode buttons will be populated by JavaScript from registry -->
+        </div>
+        <div class="mode-description" id="mode-description">
+          <!-- Mode description will be populated by JavaScript -->
+        </div>
+      </div>
+      
       <h3>Layers</h3>
-      <label>
-        <input type="checkbox" id="toggle-service-area" checked />
-        Service Area Boundary
-      </label>
-      <label>
-        <input type="checkbox" id="toggle-parcels" checked />
-        Parcel Boundaries
-      </label>
-      <label>
-        <input type="checkbox" id="toggle-service-lines" checked />
-        Service Lines
-      </label>
-      <label>
-        <input type="checkbox" id="toggle-submissions" checked />
-        Resident Submissions
-      </label>
+      <div class="layer-toggles" id="layer-toggles">
+        <!-- Layer toggles will be populated by JavaScript from registry -->
+      </div>
     </aside>
 
     <!-- Legend -->
-    <aside class="legend">
+    <aside class="legend" id="legend">
       <h4>Legend</h4>
-      
-      <div class="legend-section">
-        <div class="legend-section-title">Building Age</div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #7c2d12;"></div>
-          <span>Pre-1920</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #ea580c;"></div>
-          <span>1920–1950</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #fbbf24;"></div>
-          <span>1951–1986 (Lead Era)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #4ade80;"></div>
-          <span>Post-1986</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #94a3b8;"></div>
-          <span>Unknown</span>
-        </div>
-      </div>
-
-      <div class="legend-section">
-        <div class="legend-section-title">Boundaries</div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #0ea5e9; opacity: 0.3; border: 2px dashed #0ea5e9;"></div>
-          <span>Service Area</span>
-        </div>
-      </div>
-
-      <div class="legend-section">
-        <div class="legend-section-title">Data Points</div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #0ea5e9;"></div>
-          <span>Service Lines</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #f97316;"></div>
-          <span>Submissions</span>
-        </div>
+      <div id="legend-content">
+        <!-- Legend content will be populated by JavaScript from registry -->
       </div>
     </aside>
 
@@ -558,27 +583,11 @@ const zoom = siteConfig.map.zoom;
           no technical expertise to navigate.
         </p>
 
-        <h3>Data Sources</h3>
-        <ul>
-          <li>
-            <strong>Public Water Supply Service Areas:</strong> NYS Department of Environmental Conservation 
-            (<a href="https://gis.ny.gov" target="_blank" rel="noopener">gis.ny.gov</a>)
-          </li>
-          <li>
-            <strong>Tax Parcel Data:</strong> NYS GIS Clearinghouse - Public Tax Parcels 
-            (<a href="https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer" target="_blank" rel="noopener">NYS Tax Parcels API</a>)
-          </li>
-          <li>
-            <strong>Service Line Inventory:</strong> Town of Niskayuna Water Department
-          </li>
-          <li>
-            <strong>Resident Submissions:</strong> Community-sourced water quality testing data
-          </li>
-          <li>
-            <strong>Base Map:</strong> OpenStreetMap contributors 
-            (<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>)
-          </li>
-        </ul>
+        <h3>Data Sources & Provenance</h3>
+        <div id="provenance-list">
+          <!-- Provenance information will be populated by JavaScript from registry -->
+          <p style="color: #64748b; font-size: 13px;">Loading data sources...</p>
+        </div>
 
         <h3>Technology Stack</h3>
         <p>
@@ -613,30 +622,486 @@ const zoom = siteConfig.map.zoom;
       // Configuration
       const config = {
         basePath: document.documentElement.dataset.basePath,
-        serviceLinesUrl: document.documentElement.dataset.serviceLines,
-        submissionsUrl: document.documentElement.dataset.submissions,
-        parcelsUrl: document.documentElement.dataset.parcels,
-        serviceAreaUrl: document.documentElement.dataset.serviceArea,
+        registryUrl: document.documentElement.dataset.registry,
         mapCenter: [lat, lng],
         mapZoom: zoom,
       };
 
-      // Map and layer references
+      // Global state
       let map;
-      let serviceAreaLayer = null;
-      let parcelPolygonLayer = null;
-      let parcelCentroidLayer = null;
-      let serviceLineLayer = null;
-      let submissionLayer = null;
+      let registry = null;
+      let layers = new Map(); // layerId -> Leaflet layer object
+      let layerVisibility = new Map(); // layerId -> boolean
+      let currentMode = 'overview';
 
       // LOD threshold
       const LOD_ZOOM_THRESHOLD = 15;
 
-      // Toggle states
-      let showServiceArea = true;
-      let showParcels = true;
-      let showServiceLines = true;
-      let showSubmissions = true;
+      // HTML escaping for security
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // Path helper
+      function withBasePath(path) {
+        if (!path) return path;
+        if (path.startsWith('http')) return path;
+        const base = config.basePath || '/';
+        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+        return base + cleanPath;
+      }
+
+      // Load layer registry
+      async function loadRegistry() {
+        try {
+          const res = await fetch(config.registryUrl);
+          if (!res.ok) throw new Error(`Failed to load registry (${res.status})`);
+          registry = await res.json();
+          console.log('Layer registry loaded:', registry);
+          return registry;
+        } catch (error) {
+          console.error('Error loading registry:', error);
+          return null;
+        }
+      }
+
+      // Get color from layer style
+      function getLayerColor(layer) {
+        if (layer.style?.color) return layer.style.color;
+        if (layer.legend?.color) return layer.legend.color;
+        return '#64748b';
+      }
+
+      // Render mode buttons
+      function renderModeButtons() {
+        const container = document.getElementById('mode-buttons');
+        const description = document.getElementById('mode-description');
+        
+        if (!registry?.modes) return;
+        
+        container.innerHTML = registry.modes.map(mode => `
+          <button class="mode-btn ${mode.id === currentMode ? 'active' : ''}" 
+                  data-mode="${escapeHtml(mode.id)}">
+            ${escapeHtml(mode.label)}
+          </button>
+        `).join('');
+
+        // Set initial description
+        const activeMode = registry.modes.find(m => m.id === currentMode);
+        if (activeMode) {
+          description.textContent = activeMode.description;
+        }
+
+        // Add click handlers
+        container.querySelectorAll('.mode-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const modeId = btn.dataset.mode;
+            setMode(modeId);
+          });
+        });
+      }
+
+      // Set analysis mode
+      function setMode(modeId) {
+        const mode = registry.modes.find(m => m.id === modeId);
+        if (!mode) return;
+
+        currentMode = modeId;
+
+        // Update button states
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.mode === modeId);
+        });
+
+        // Update description
+        const description = document.getElementById('mode-description');
+        description.textContent = mode.description;
+
+        // Update layer visibility
+        if (mode.enable_layers) {
+          mode.enable_layers.forEach(layerId => {
+            layerVisibility.set(layerId, true);
+            updateLayerVisibility(layerId, true);
+          });
+        }
+
+        if (mode.disable_layers) {
+          mode.disable_layers.forEach(layerId => {
+            layerVisibility.set(layerId, false);
+            updateLayerVisibility(layerId, false);
+          });
+        }
+
+        // Update legend
+        renderLegend(mode.legend_profile || 'default');
+
+        // Update layer toggles UI
+        updateLayerToggles();
+      }
+
+      // Render layer toggles
+      function renderLayerToggles() {
+        const container = document.getElementById('layer-toggles');
+        if (!registry?.layers) return;
+
+        // Group layers by group
+        const groups = {};
+        registry.layers.forEach(layer => {
+          if (!groups[layer.group]) groups[layer.group] = [];
+          groups[layer.group].push(layer);
+        });
+
+        container.innerHTML = Object.entries(groups).map(([groupName, groupLayers]) => `
+          <div class="layer-group">
+            <div class="layer-group-title">${escapeHtml(groupName)}</div>
+            ${groupLayers.map(layer => {
+              const checked = layerVisibility.get(layer.id) !== false;
+              return `
+                <label>
+                  <input type="checkbox" 
+                         data-layer="${escapeHtml(layer.id)}" 
+                         ${checked ? 'checked' : ''} />
+                  ${escapeHtml(layer.label)}
+                </label>
+              `;
+            }).join('')}
+          </div>
+        `).join('');
+
+        // Add change handlers
+        container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const layerId = e.target.dataset.layer;
+            const visible = e.target.checked;
+            layerVisibility.set(layerId, visible);
+            updateLayerVisibility(layerId, visible);
+          });
+        });
+      }
+
+      // Update layer toggles UI only (don't change visibility)
+      function updateLayerToggles() {
+        document.querySelectorAll('#layer-toggles input[type="checkbox"]').forEach(checkbox => {
+          const layerId = checkbox.dataset.layer;
+          const visible = layerVisibility.get(layerId) !== false;
+          checkbox.checked = visible;
+        });
+      }
+
+      // Render legend
+      function renderLegend(profileId = 'default') {
+        const container = document.getElementById('legend-content');
+        const profile = registry.legend_profiles?.[profileId];
+        
+        if (!profile?.sections) {
+          container.innerHTML = '<p style="color: #64748b; font-size: 12px;">No legend available</p>';
+          return;
+        }
+
+        container.innerHTML = profile.sections.map(section => {
+          const sectionLayers = section.items.map(layerId => 
+            registry.layers.find(l => l.id === layerId)
+          ).filter(Boolean);
+
+          return `
+            <div class="legend-section">
+              <div class="legend-section-title">${escapeHtml(section.label)}</div>
+              ${sectionLayers.map(layer => {
+                if (layer.legend?.swatch === 'categories' && layer.legend?.categories) {
+                  return layer.legend.categories.map(cat => `
+                    <div class="legend-item">
+                      <div class="legend-color" style="background-color: ${escapeHtml(cat.color)};"></div>
+                      <span>${escapeHtml(cat.label)}</span>
+                    </div>
+                  `).join('');
+                } else if (layer.legend?.swatch === 'line') {
+                  const color = getLayerColor(layer);
+                  const isDashed = layer.style?.dash;
+                  return `
+                    <div class="legend-item">
+                      <div class="legend-color" style="background-color: ${escapeHtml(color)}; ${isDashed ? 'opacity: 0.3; border: 2px dashed ' + escapeHtml(color) : ''}"></div>
+                      <span>${escapeHtml(layer.legend.text || layer.label)}</span>
+                    </div>
+                  `;
+                } else if (layer.legend?.swatch === 'fill') {
+                  const color = getLayerColor(layer);
+                  return `
+                    <div class="legend-item">
+                      <div class="legend-color" style="background-color: ${escapeHtml(color)}; opacity: 0.5;"></div>
+                      <span>${escapeHtml(layer.legend.text || layer.label)}</span>
+                    </div>
+                  `;
+                } else {
+                  const color = getLayerColor(layer);
+                  return `
+                    <div class="legend-item">
+                      <div class="legend-color" style="background-color: ${escapeHtml(color)};"></div>
+                      <span>${escapeHtml(layer.legend?.text || layer.label)}</span>
+                    </div>
+                  `;
+                }
+              }).join('')}
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render provenance list
+      function renderProvenance() {
+        const container = document.getElementById('provenance-list');
+        if (!registry?.layers) return;
+
+        container.innerHTML = '<ul style="padding-left: 20px; margin-top: 12px;">' + 
+          registry.layers.map(layer => {
+            const prov = layer.provenance;
+            if (!prov) return '';
+            
+            return `
+              <li style="margin-bottom: 16px;">
+                <strong>${escapeHtml(layer.label)}</strong><br/>
+                <span style="font-size: 12px; color: #64748b;">
+                  Source: ${escapeHtml(prov.source_name)}<br/>
+                  ${prov.source_url && prov.source_url !== 'Municipal Records' && prov.source_url !== 'Community-sourced' && prov.source_url !== 'Derived from road classification' && prov.source_url !== 'NYS DEC' ? 
+                    `URL: <a href="${escapeHtml(prov.source_url)}" target="_blank" rel="noopener">${escapeHtml(prov.source_url)}</a><br/>` : ''}
+                  License: ${escapeHtml(prov.license)}<br/>
+                  Completeness: ${escapeHtml(prov.completeness)}
+                </span>
+              </li>
+            `;
+          }).filter(Boolean).join('') + '</ul>' +
+          '<p style="margin-top: 16px; font-size: 13px; color: #64748b;"><strong>Base Map:</strong> OpenStreetMap contributors (<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>)</p>';
+      }
+
+      // Load a layer from registry
+      async function loadLayer(layerDef) {
+        try {
+          const path = withBasePath(layerDef.path);
+          const res = await fetch(path);
+          
+          if (!res.ok) {
+            console.log(`Layer ${layerDef.id} not available (${res.status})`);
+            return null;
+          }
+
+          let data = await res.json();
+          
+          // Convert submissions.json format to GeoJSON if needed
+          if (layerDef.id === 'resident_submissions' && Array.isArray(data)) {
+            const features = data
+              .filter(s => s.coordinates && s.coordinates.lat && s.coordinates.lng)
+              .map(s => ({
+                type: 'Feature',
+                properties: s,
+                geometry: { type: 'Point', coordinates: [s.coordinates.lng, s.coordinates.lat] }
+              }));
+            data = { type: 'FeatureCollection', features };
+          }
+
+          let leafletLayer;
+
+          if (layerDef.geometry === 'point') {
+            leafletLayer = L.geoJSON(data, {
+              pointToLayer: (feature, latlng) => {
+                const color = layerDef.style?.color || getLayerColor(layerDef);
+                const radius = layerDef.style?.point_radius || 5;
+                const opacity = layerDef.style?.point_opacity || 0.8;
+                
+                return L.circleMarker(latlng, {
+                  radius: radius,
+                  color: color,
+                  weight: 2,
+                  fillColor: color,
+                  fillOpacity: opacity
+                });
+              },
+              onEachFeature: (feature, layer) => {
+                if (layerDef.tooltip?.text) {
+                  layer.bindTooltip(layerDef.tooltip.text);
+                }
+                if (feature.properties) {
+                  const popupContent = createPopupContent(layerDef, feature.properties);
+                  if (popupContent) layer.bindPopup(popupContent);
+                }
+              }
+            });
+          } else if (layerDef.geometry === 'line') {
+            leafletLayer = L.geoJSON(data, {
+              style: {
+                color: layerDef.style?.color || getLayerColor(layerDef),
+                weight: layerDef.style?.stroke_width || 2,
+                opacity: layerDef.style?.stroke_opacity || 0.7,
+                dashArray: layerDef.style?.dash ? layerDef.style.dash.join(', ') : undefined
+              },
+              onEachFeature: (feature, layer) => {
+                if (layerDef.tooltip?.text) {
+                  layer.bindTooltip(layerDef.tooltip.text);
+                }
+                if (feature.properties) {
+                  const popupContent = createPopupContent(layerDef, feature.properties);
+                  if (popupContent) layer.bindPopup(popupContent);
+                }
+              }
+            });
+          } else if (layerDef.geometry === 'polygon') {
+            // Handle parcels with LOD
+            if (layerDef.id === 'parcels') {
+              return loadParcelsWithLOD(data, layerDef);
+            }
+            
+            leafletLayer = L.geoJSON(data, {
+              style: {
+                fillColor: layerDef.style?.color || getLayerColor(layerDef),
+                fillOpacity: layerDef.style?.fill_opacity || 0.1,
+                color: layerDef.style?.color || getLayerColor(layerDef),
+                weight: layerDef.style?.stroke_width || 1,
+                opacity: layerDef.style?.stroke_opacity || 0.5,
+                dashArray: layerDef.style?.dash ? layerDef.style.dash.join(', ') : undefined
+              },
+              onEachFeature: (feature, layer) => {
+                if (layerDef.tooltip?.text) {
+                  layer.bindTooltip(layerDef.tooltip.text);
+                }
+                if (feature.properties) {
+                  const popupContent = createPopupContent(layerDef, feature.properties);
+                  if (popupContent) layer.bindPopup(popupContent);
+                }
+                
+                // Add hover effect
+                layer.on('mouseover', function () {
+                  this.setStyle({ weight: 2, opacity: 1 });
+                });
+                layer.on('mouseout', function () {
+                  this.setStyle({ 
+                    weight: layerDef.style?.stroke_width || 1, 
+                    opacity: layerDef.style?.stroke_opacity || 0.5 
+                  });
+                });
+              }
+            });
+          }
+
+          return leafletLayer;
+        } catch (error) {
+          console.error(`Error loading layer ${layerDef.id}:`, error);
+          return null;
+        }
+      }
+
+      // Load parcels with LOD support
+      async function loadParcelsWithLOD(data, layerDef) {
+        // Create polygon layer
+        const polygonLayer = L.geoJSON(data, {
+          style: (feature) => {
+            const yearBuilt = feature.properties?.year_built;
+            const color = getAgeColor(yearBuilt);
+            return {
+              fillColor: color,
+              fillOpacity: 0.5,
+              color: '#64748b',
+              weight: 1,
+              opacity: 0.6
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const popupContent = createParcelPopup(feature.properties);
+            if (popupContent) layer.bindPopup(popupContent);
+            
+            layer.on('mouseover', function () {
+              this.setStyle({ weight: 2, opacity: 1 });
+            });
+            layer.on('mouseout', function () {
+              this.setStyle({ weight: 1, opacity: 0.6 });
+            });
+          }
+        });
+
+        // Create centroid layer
+        const centroids = {
+          type: 'FeatureCollection',
+          features: data.features.map(f => {
+            let coords;
+            if (f.geometry.type === 'Polygon') {
+              coords = f.geometry.coordinates[0];
+            } else if (f.geometry.type === 'MultiPolygon') {
+              coords = f.geometry.coordinates[0][0];
+            } else {
+              return null;
+            }
+            
+            const lats = coords.map(c => c[1]);
+            const lngs = coords.map(c => c[0]);
+            const centroidLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+            const centroidLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+            
+            return {
+              type: 'Feature',
+              properties: f.properties,
+              geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] }
+            };
+          }).filter(Boolean)
+        };
+
+        const centroidLayer = L.geoJSON(centroids, {
+          pointToLayer: (feature, latlng) => {
+            const yearBuilt = feature.properties?.year_built;
+            const color = getAgeColor(yearBuilt);
+            return L.circleMarker(latlng, {
+              radius: 4,
+              fillColor: color,
+              color: '#64748b',
+              weight: 1,
+              opacity: 0.6,
+              fillOpacity: 0.7
+            });
+          },
+          onEachFeature: (feature, layer) => {
+            const popupContent = createParcelPopup(feature.properties);
+            if (popupContent) layer.bindPopup(popupContent);
+          }
+        });
+
+        // Return LOD wrapper
+        return {
+          _isLOD: true,
+          _polygonLayer: polygonLayer,
+          _centroidLayer: centroidLayer,
+          _currentLayer: null,
+          addTo: function(map) {
+            this._map = map;
+            this._updateLOD();
+            return this;
+          },
+          remove: function() {
+            if (this._currentLayer) {
+              this._map.removeLayer(this._currentLayer);
+              this._currentLayer = null;
+            }
+            return this;
+          },
+          _updateLOD: function() {
+            if (!this._map) return;
+            
+            const zoom = this._map.getZoom();
+            const shouldShowPolygons = zoom >= LOD_ZOOM_THRESHOLD;
+            
+            if (shouldShowPolygons && this._currentLayer !== this._polygonLayer) {
+              if (this._currentLayer) this._map.removeLayer(this._currentLayer);
+              this._map.addLayer(this._polygonLayer);
+              this._currentLayer = this._polygonLayer;
+            } else if (!shouldShowPolygons && this._currentLayer !== this._centroidLayer) {
+              if (this._currentLayer) this._map.removeLayer(this._currentLayer);
+              this._map.addLayer(this._centroidLayer);
+              this._currentLayer = this._centroidLayer;
+            }
+          }
+        };
+      }
 
       // Color mapping for building age
       function getAgeColor(yearBuilt) {
@@ -655,18 +1120,20 @@ const zoom = siteConfig.map.zoom;
         return 'Post-1986';
       }
 
-      // HTML escaping for security
-      function escapeHtml(value) {
-        if (value === null || value === undefined) return '';
-        return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+      // Create popup content based on layer type
+      function createPopupContent(layerDef, props) {
+        if (layerDef.id === 'service_lines_points') {
+          return createServiceLinePopup(props);
+        } else if (layerDef.id === 'resident_submissions') {
+          return createSubmissionPopup(props);
+        } else if (layerDef.id === 'service_area_boundary') {
+          return createServiceAreaPopup(props);
+        }
+        
+        // Generic popup
+        return `<strong>${escapeHtml(layerDef.label)}</strong>`;
       }
 
-      // Create parcel popup content
       function createParcelPopup(props) {
         const yearBuilt = escapeHtml(props.year_built || 'Unknown');
         const ageCategory = escapeHtml(getAgeCategory(props.year_built));
@@ -682,7 +1149,6 @@ const zoom = siteConfig.map.zoom;
         `;
       }
 
-      // Create service line popup content
       function createServiceLinePopup(props) {
         const address = escapeHtml(props.address || 'Unknown address');
         const privateMaterial = props.private_material ? escapeHtml(props.private_material) : 'Unknown';
@@ -698,7 +1164,6 @@ const zoom = siteConfig.map.zoom;
         `;
       }
 
-      // Create submission popup content
       function createSubmissionPopup(entry) {
         const address = escapeHtml(entry.address || 'Unknown');
         const summary = [
@@ -714,256 +1179,42 @@ const zoom = siteConfig.map.zoom;
         `;
       }
 
-      // Load water service area boundary
-      async function loadServiceArea() {
-        try {
-          const res = await fetch(config.serviceAreaUrl);
-          if (!res.ok) {
-            console.log('Service area data not available');
-            return;
-          }
-          const data = await res.json();
-
-          serviceAreaLayer = L.geoJSON(data, {
-            style: {
-              fillColor: '#0ea5e9',
-              fillOpacity: 0.1,
-              color: '#0ea5e9',
-              weight: 3,
-              opacity: 0.7,
-              dashArray: '8, 4',
-            },
-            onEachFeature: (feature, layer) => {
-              const props = feature.properties;
-              const content = `
-                <strong>${escapeHtml(props.PWS_NAME || 'Water Service Area')}</strong>
-                ${props.POPULATION_SERVED ? `<div class="popup-row"><strong>Population Served:</strong> ${escapeHtml(props.POPULATION_SERVED.toLocaleString())}</div>` : ''}
-                ${props.WATER_SOURCE_TYPE ? `<div class="popup-row"><strong>Water Source:</strong> ${escapeHtml(props.WATER_SOURCE_TYPE)}</div>` : ''}
-                ${props.SUPPLIER_TYPE ? `<div class="popup-row"><strong>Supplier:</strong> ${escapeHtml(props.SUPPLIER_TYPE)}</div>` : ''}
-                ${props.SOURCE_WATER ? `<div class="popup-row"><strong>Source:</strong> ${escapeHtml(props.SOURCE_WATER)}</div>` : ''}
-              `;
-              layer.bindPopup(content);
-            },
-          });
-
-          if (showServiceArea) {
-            serviceAreaLayer.addTo(map);
-          }
-
-          // Update info panel with service area data if available
-          if (data.features && data.features[0]) {
-            const props = data.features[0].properties;
-            updateInfoPanel(props);
-          }
-        } catch (error) {
-          console.log('Service area not loaded:', error.message);
-        }
+      function createServiceAreaPopup(props) {
+        return `
+          <strong>${escapeHtml(props.PWS_NAME || 'Water Service Area')}</strong>
+          ${props.POPULATION_SERVED ? `<div class="popup-row"><strong>Population Served:</strong> ${escapeHtml(props.POPULATION_SERVED.toLocaleString())}</div>` : ''}
+          ${props.WATER_SOURCE_TYPE ? `<div class="popup-row"><strong>Water Source:</strong> ${escapeHtml(props.WATER_SOURCE_TYPE)}</div>` : ''}
+          ${props.SUPPLIER_TYPE ? `<div class="popup-row"><strong>Supplier:</strong> ${escapeHtml(props.SUPPLIER_TYPE)}</div>` : ''}
+          ${props.SOURCE_WATER ? `<div class="popup-row"><strong>Source:</strong> ${escapeHtml(props.SOURCE_WATER)}</div>` : ''}
+        `;
       }
 
-      // Update info panel with service area data
-      function updateInfoPanel(props) {
-        const systemName = document.querySelector('.info-item .value');
-        const items = document.querySelectorAll('.info-item');
-        
-        if (systemName && props.PWS_NAME) {
-          systemName.textContent = props.PWS_NAME;
-        }
-        
-        if (items[1] && props.POPULATION_SERVED) {
-          items[1].querySelector('.value').textContent = `~${props.POPULATION_SERVED.toLocaleString()}`;
-        }
-        
-        if (items[2] && props.WATER_SOURCE_TYPE) {
-          items[2].querySelector('.value').textContent = props.WATER_SOURCE_TYPE;
-        }
-        
-        if (items[3] && props.SUPPLIER_TYPE) {
-          items[3].querySelector('.value').textContent = props.SUPPLIER_TYPE;
-        }
-      }
+      // Update layer visibility
+      function updateLayerVisibility(layerId, visible) {
+        const layer = layers.get(layerId);
+        if (!layer) return;
 
-      // Load parcel data
-      async function loadParcels() {
-        try {
-          const res = await fetch(config.parcelsUrl);
-          if (!res.ok) throw new Error(`Failed to load parcels (${res.status})`);
-          const data = await res.json();
-
-          // Create polygon layer (shown at high zoom)
-          parcelPolygonLayer = L.geoJSON(data, {
-            style: (feature) => ({
-              fillColor: getAgeColor(feature.properties.year_built),
-              fillOpacity: 0.5,
-              color: '#64748b',
-              weight: 1,
-              opacity: 0.6,
-            }),
-            onEachFeature: (feature, layer) => {
-              layer.bindPopup(createParcelPopup(feature.properties));
-              layer.on('mouseover', function () {
-                this.setStyle({ weight: 2, opacity: 1 });
-              });
-              layer.on('mouseout', function () {
-                this.setStyle({ weight: 1, opacity: 0.6 });
-              });
-            },
-          });
-
-          // Create centroid layer (shown at low zoom)
-          const centroids = {
-            type: 'FeatureCollection',
-            features: data.features.map((f) => {
-              // More robust geometry handling for Polygon and MultiPolygon
-              let coords;
-              if (f.geometry.type === 'Polygon') {
-                coords = f.geometry.coordinates[0]; // Outer ring of polygon
-              } else if (f.geometry.type === 'MultiPolygon') {
-                coords = f.geometry.coordinates[0][0]; // Outer ring of first polygon
-              } else {
-                console.warn('Unsupported geometry type:', f.geometry.type);
-                return null;
-              }
-              
-              const lats = coords.map((c) => c[1]);
-              const lngs = coords.map((c) => c[0]);
-              const centroidLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-              const centroidLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-              
-              return {
-                type: 'Feature',
-                properties: f.properties,
-                geometry: { type: 'Point', coordinates: [centroidLng, centroidLat] },
-              };
-            }).filter(Boolean), // Remove any null entries
-          };
-
-          parcelCentroidLayer = L.geoJSON(centroids, {
-            pointToLayer: (feature, latlng) => {
-              return L.circleMarker(latlng, {
-                radius: 4,
-                fillColor: getAgeColor(feature.properties.year_built),
-                color: '#64748b',
-                weight: 1,
-                opacity: 0.6,
-                fillOpacity: 0.7,
-              });
-            },
-            onEachFeature: (feature, layer) => {
-              layer.bindPopup(createParcelPopup(feature.properties));
-            },
-          });
-
-          updateParcelLOD();
-        } catch (error) {
-          console.error('Error loading parcels:', error);
-        }
-      }
-
-      // Update parcel LOD based on zoom
-      function updateParcelLOD() {
-        if (!showParcels) return;
-        
-        const currentZoom = map.getZoom();
-        
-        if (currentZoom >= LOD_ZOOM_THRESHOLD) {
-          if (parcelCentroidLayer && map.hasLayer(parcelCentroidLayer)) {
-            map.removeLayer(parcelCentroidLayer);
+        if (visible && !map.hasLayer(layer)) {
+          layer.addTo(map);
+          
+          // Update LOD for parcels
+          if (layer._isLOD) {
+            layer._updateLOD();
           }
-          if (parcelPolygonLayer && !map.hasLayer(parcelPolygonLayer)) {
-            parcelPolygonLayer.addTo(map);
-          }
-        } else {
-          if (parcelPolygonLayer && map.hasLayer(parcelPolygonLayer)) {
-            map.removeLayer(parcelPolygonLayer);
-          }
-          if (parcelCentroidLayer && !map.hasLayer(parcelCentroidLayer)) {
-            parcelCentroidLayer.addTo(map);
-          }
-        }
-      }
-
-      // Load service lines
-      async function loadServiceLines() {
-        try {
-          const res = await fetch(config.serviceLinesUrl);
-          if (!res.ok) throw new Error(`Failed to load service lines (${res.status})`);
-          const data = await res.json();
-
-          serviceLineLayer = L.geoJSON(data, {
-            pointToLayer: (feature, latlng) => {
-              const status = (feature.properties?.status || '').toLowerCase();
-              const color = status === 'verified' ? '#22c55e' : '#0ea5e9';
-              return L.circleMarker(latlng, {
-                radius: 6,
-                color: color,
-                weight: 2,
-                fillColor: color,
-                fillOpacity: 0.7,
-              });
-            },
-            onEachFeature: (feature, layer) => {
-              layer.bindPopup(createServiceLinePopup(feature.properties));
-            },
-          });
-
-          if (showServiceLines) {
-            serviceLineLayer.addTo(map);
-          }
-        } catch (error) {
-          console.error('Error loading service lines:', error);
-        }
-      }
-
-      // Load submissions
-      async function loadSubmissions() {
-        try {
-          const res = await fetch(config.submissionsUrl);
-          if (!res.ok) throw new Error(`Failed to load submissions (${res.status})`);
-          const submissions = await res.json();
-
-          const features = submissions
-            .filter((s) => s.coordinates && s.coordinates.lat && s.coordinates.lng)
-            .map((s) => ({
-              type: 'Feature',
-              properties: s,
-              geometry: { type: 'Point', coordinates: [s.coordinates.lng, s.coordinates.lat] },
-            }));
-
-          submissionLayer = L.geoJSON({ type: 'FeatureCollection', features }, {
-            pointToLayer: (feature, latlng) => {
-              return L.circleMarker(latlng, {
-                radius: 6,
-                color: '#f97316',
-                weight: 2,
-                fillColor: '#f97316',
-                fillOpacity: 0.8,
-              });
-            },
-            onEachFeature: (feature, layer) => {
-              layer.bindPopup(createSubmissionPopup(feature.properties));
-            },
-          });
-
-          if (showSubmissions) {
-            submissionLayer.addTo(map);
-          }
-        } catch (error) {
-          console.error('Error loading submissions:', error);
-        }
-      }
-
-      // Toggle layer visibility
-      function toggleLayer(layerRef, show) {
-        if (!layerRef) return;
-        if (show && !map.hasLayer(layerRef)) {
-          layerRef.addTo(map);
-        } else if (!show && map.hasLayer(layerRef)) {
-          map.removeLayer(layerRef);
+        } else if (!visible && map.hasLayer(layer)) {
+          layer.remove();
         }
       }
 
       // Initialize
-      document.addEventListener('DOMContentLoaded', () => {
+      async function init() {
+        // Load registry
+        await loadRegistry();
+        if (!registry) {
+          console.error('Failed to load registry');
+          return;
+        }
+
         // Initialize map
         map = L.map('map', { scrollWheelZoom: true }).setView(config.mapCenter, config.mapZoom);
         
@@ -972,40 +1223,39 @@ const zoom = siteConfig.map.zoom;
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         }).addTo(map);
 
-        // Load data layers
-        loadServiceArea();
-        loadParcels();
-        loadServiceLines();
-        loadSubmissions();
-
         // Listen for zoom changes
-        map.on('zoomend', updateParcelLOD);
-
-        // Layer toggles
-        document.getElementById('toggle-service-area').addEventListener('change', (e) => {
-          showServiceArea = e.target.checked;
-          toggleLayer(serviceAreaLayer, showServiceArea);
+        map.on('zoomend', () => {
+          layers.forEach((layer, layerId) => {
+            if (layer._isLOD && map.hasLayer(layer)) {
+              layer._updateLOD();
+            }
+          });
         });
 
-        document.getElementById('toggle-parcels').addEventListener('change', (e) => {
-          showParcels = e.target.checked;
-          if (showParcels) {
-            updateParcelLOD();
-          } else {
-            toggleLayer(parcelPolygonLayer, false);
-            toggleLayer(parcelCentroidLayer, false);
+        // Load all layers
+        for (const layerDef of registry.layers) {
+          const layer = await loadLayer(layerDef);
+          if (layer) {
+            layers.set(layerDef.id, layer);
+            
+            // Set initial visibility
+            const visible = layerDef.default_visible !== false;
+            layerVisibility.set(layerDef.id, visible);
+            
+            if (visible) {
+              layer.addTo(map);
+            }
           }
-        });
+        }
 
-        document.getElementById('toggle-service-lines').addEventListener('change', (e) => {
-          showServiceLines = e.target.checked;
-          toggleLayer(serviceLineLayer, showServiceLines);
-        });
+        // Render UI
+        renderModeButtons();
+        renderLayerToggles();
+        renderLegend();
+        renderProvenance();
 
-        document.getElementById('toggle-submissions').addEventListener('change', (e) => {
-          showSubmissions = e.target.checked;
-          toggleLayer(submissionLayer, showSubmissions);
-        });
+        // Set initial mode
+        setMode(currentMode);
 
         // Info panel toggle
         const infoPanel = document.getElementById('info-panel');
@@ -1033,7 +1283,9 @@ const zoom = siteConfig.map.zoom;
             aboutPanel.classList.remove('visible');
           }
         });
-      });
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
     </script>
   </body>
 </html>
