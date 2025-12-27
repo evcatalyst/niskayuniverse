@@ -1215,6 +1215,18 @@ const zoom = siteConfig.map.zoom;
           return;
         }
 
+        // Check if Leaflet is available
+        if (typeof L === 'undefined') {
+          console.error('Leaflet library not loaded');
+          // Still render UI controls even without map
+          renderModeButtons();
+          renderLayerToggles();
+          renderLegend();
+          renderProvenance();
+          setupEventHandlers();
+          return;
+        }
+
         // Initialize map
         map = L.map('map', { scrollWheelZoom: true }).setView(config.mapCenter, config.mapZoom);
         
@@ -1257,32 +1269,46 @@ const zoom = siteConfig.map.zoom;
         // Set initial mode
         setMode(currentMode);
 
+        setupEventHandlers();
+      }
+
+      // Setup event handlers
+      function setupEventHandlers() {
+
         // Info panel toggle
         const infoPanel = document.getElementById('info-panel');
         const panelHandle = document.getElementById('panel-handle');
         
-        panelHandle.addEventListener('click', () => {
-          infoPanel.classList.toggle('expanded');
-        });
+        if (panelHandle) {
+          panelHandle.addEventListener('click', () => {
+            infoPanel.classList.toggle('expanded');
+          });
+        }
 
         // About panel toggle
         const aboutPanel = document.getElementById('about-panel');
         const aboutBtn = document.getElementById('about-btn');
         const closeAbout = document.getElementById('close-about');
 
-        aboutBtn.addEventListener('click', () => {
-          aboutPanel.classList.add('visible');
-        });
+        if (aboutBtn) {
+          aboutBtn.addEventListener('click', () => {
+            aboutPanel.classList.add('visible');
+          });
+        }
 
-        closeAbout.addEventListener('click', () => {
-          aboutPanel.classList.remove('visible');
-        });
-
-        aboutPanel.addEventListener('click', (e) => {
-          if (e.target === aboutPanel) {
+        if (closeAbout) {
+          closeAbout.addEventListener('click', () => {
             aboutPanel.classList.remove('visible');
-          }
-        });
+          });
+        }
+
+        if (aboutPanel) {
+          aboutPanel.addEventListener('click', (e) => {
+            if (e.target === aboutPanel) {
+              aboutPanel.classList.remove('visible');
+            }
+          });
+        }
       }
 
       document.addEventListener('DOMContentLoaded', init);
