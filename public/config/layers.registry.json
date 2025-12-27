@@ -1,0 +1,460 @@
+{
+  "schema_version": "1.0.0",
+  "app": {
+    "name": "Water Distribution Dashboard",
+    "region": {
+      "id": "ny-niskayuna",
+      "label": "Niskayuna, NY",
+      "default_view": { "center": [-73.90, 42.78], "zoom": 12 },
+      "bounds": { "west": -74.05, "south": 42.70, "east": -73.78, "north": 42.88 }
+    }
+  },
+  "modes": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "description": "Simple, general view with core boundaries and key points.",
+      "enable_layers": ["service_area_boundary", "parcels", "service_lines_points"],
+      "disable_layers": ["flow_accumulation", "ponding_zones", "salt_priority_roads", "storm_inlets", "storm_outfalls", "water_mains", "main_breaks"],
+      "legend_profile": "default",
+      "ui_hints": { "show_help_tip": true, "help_tip_text": "Toggle layers or tap features for details." }
+    },
+    {
+      "id": "distribution_intrusion",
+      "label": "Distribution Intrusion",
+      "description": "Investigate potential intrusion via leaks/cracks and proximity to runoff + salting.",
+      "enable_layers": ["water_mains", "main_breaks", "salt_priority_roads", "flow_accumulation", "ponding_zones"],
+      "disable_layers": ["parcels"],
+      "legend_profile": "intrusion",
+      "analysis_recipes": ["proximity_buffer_overlay", "click_context_highlight"]
+    },
+    {
+      "id": "groundwater_seepage",
+      "label": "Groundwater Seepage",
+      "description": "Investigate seepage into soils/aquifer and persistence in subsurface pathways.",
+      "enable_layers": ["soils_hydrologic_group", "surficial_geology", "recharge_zones", "flow_accumulation", "ponding_zones", "salt_priority_roads"],
+      "disable_layers": ["parcels", "service_lines_points"],
+      "legend_profile": "seepage",
+      "analysis_recipes": ["infiltration_sensitivity_overlay"]
+    },
+    {
+      "id": "stormwater_interaction",
+      "label": "Stormwater Interaction",
+      "description": "Investigate stormwater entry points and where runoff intersects infrastructure.",
+      "enable_layers": ["storm_inlets", "storm_outfalls", "salt_priority_roads", "flow_accumulation", "water_mains"],
+      "disable_layers": ["parcels"],
+      "legend_profile": "stormwater",
+      "analysis_recipes": ["inlet_to_main_proximity", "click_context_highlight"]
+    }
+  ],
+  "legend_profiles": {
+    "default": {
+      "sections": [
+        { "id": "boundaries", "label": "Boundaries", "items": ["service_area_boundary"] },
+        { "id": "data_points", "label": "Data Points", "items": ["service_lines_points", "resident_submissions"] }
+      ]
+    },
+    "intrusion": {
+      "sections": [
+        { "id": "movement", "label": "Movement", "items": ["flow_accumulation", "ponding_zones"] },
+        { "id": "infrastructure", "label": "Infrastructure", "items": ["water_mains", "main_breaks"] },
+        { "id": "loading", "label": "Salt Exposure", "items": ["salt_priority_roads"] }
+      ]
+    },
+    "seepage": {
+      "sections": [
+        { "id": "movement", "label": "Movement", "items": ["flow_accumulation", "ponding_zones"] },
+        { "id": "subsurface", "label": "Subsurface", "items": ["soils_hydrologic_group", "surficial_geology", "recharge_zones"] },
+        { "id": "loading", "label": "Salt Exposure", "items": ["salt_priority_roads"] }
+      ]
+    },
+    "stormwater": {
+      "sections": [
+        { "id": "movement", "label": "Movement", "items": ["flow_accumulation", "ponding_zones"] },
+        { "id": "stormwater", "label": "Stormwater", "items": ["storm_inlets", "storm_outfalls"] },
+        { "id": "infrastructure", "label": "Infrastructure", "items": ["water_mains"] },
+        { "id": "loading", "label": "Salt Exposure", "items": ["salt_priority_roads"] }
+      ]
+    }
+  },
+  "layers": [
+    {
+      "id": "service_area_boundary",
+      "label": "Service Area Boundary",
+      "group": "Boundaries",
+      "type": "geojson",
+      "geometry": "polygon",
+      "path": "/data/water_service_area.geojson",
+      "default_visible": true,
+      "min_zoom": 0,
+      "max_zoom": 24,
+      "style": { "stroke": true, "stroke_width": 2, "fill": true, "fill_opacity": 0.06, "dash": [6, 4], "color": "#0ea5e9" },
+      "legend": { "swatch": "line", "text": "Service Area" },
+      "provenance": {
+        "source_name": "NYS DEC (Public Water Supply Service Areas)",
+        "source_url": "https://gis.ny.gov",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["reproject_to_wgs84", "filter_region(ny-niskayuna)", "simplify(tolerance=0.00005)"],
+        "completeness": "Boundary only; does not imply ownership of all assets.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "parcels",
+      "label": "Parcel Boundaries",
+      "group": "Boundaries",
+      "type": "geojson",
+      "geometry": "polygon",
+      "path": "/data/parcels_nys.geojson",
+      "default_visible": true,
+      "min_zoom": 14,
+      "max_zoom": 24,
+      "style": { "stroke": true, "stroke_width": 1, "fill": false, "stroke_opacity": 0.25, "color": "#64748b" },
+      "legend": { "swatch": "line", "text": "Parcels" },
+      "provenance": {
+        "source_name": "NYS GIS Clearinghouse (Tax Parcels)",
+        "source_url": "https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer",
+        "license": "NYS Open Data",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["reproject_to_wgs84", "clip_to_bounds(ny-niskayuna)", "simplify(tolerance=0.00002)"],
+        "completeness": "Parcel geometry may lag latest subdivisions.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "service_lines_points",
+      "label": "Service Lines",
+      "group": "Data Points",
+      "type": "geojson",
+      "geometry": "point",
+      "path": "/data/service_lines.geojson",
+      "default_visible": true,
+      "min_zoom": 12,
+      "max_zoom": 24,
+      "style": { "point_radius": 5, "point_opacity": 0.9, "categorical_color_by": "building_age_bin" },
+      "legend": {
+        "swatch": "categories",
+        "category_field": "building_age_bin",
+        "categories": [
+          { "value": "Pre-1920", "label": "Pre-1920", "color": "#7c2d12" },
+          { "value": "1920-1950", "label": "1920–1950", "color": "#ea580c" },
+          { "value": "1951-1986", "label": "1951–1986 (Lead Era)", "color": "#fbbf24" },
+          { "value": "Post-1986", "label": "Post-1986", "color": "#4ade80" },
+          { "value": "Unknown", "label": "Unknown", "color": "#94a3b8" }
+        ]
+      },
+      "provenance": {
+        "source_name": "Town of Niskayuna (Service Line Inventory)",
+        "source_url": "https://www.niskayuna.org",
+        "license": "Municipal Open Data",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["normalize_columns", "dedupe_by(address_or_id)", "reproject_to_wgs84"],
+        "completeness": "May contain unknowns and resident-reported entries; verify before enforcement.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "resident_submissions",
+      "label": "Resident Submissions",
+      "group": "Data Points",
+      "type": "geojson",
+      "geometry": "point",
+      "path": "/data/submissions.json",
+      "default_visible": false,
+      "min_zoom": 12,
+      "max_zoom": 24,
+      "style": { "point_radius": 6, "point_opacity": 0.9, "color": "#f97316" },
+      "legend": { "swatch": "dot", "text": "Submissions", "color": "#f97316" },
+      "provenance": {
+        "source_name": "Community Water Testing Submissions",
+        "source_url": "Community-sourced",
+        "license": "Public Submissions",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["validate_schema", "strip_pii_fields"],
+        "completeness": "User-submitted; may be inaccurate.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "water_mains",
+      "label": "Water Mains",
+      "group": "Distribution",
+      "type": "geojson",
+      "geometry": "line",
+      "path": "/data/water_mains.geojson",
+      "default_visible": false,
+      "min_zoom": 12,
+      "max_zoom": 24,
+      "style": { "stroke_width": 2, "stroke_opacity": 0.75, "color": "#3b82f6", "categorical_color_by": "material_or_age_bin" },
+      "legend": { "swatch": "line", "text": "Water Mains", "color": "#3b82f6" },
+      "provenance": {
+        "source_name": "Town of Niskayuna DPW (Infrastructure GIS)",
+        "source_url": "Municipal Records",
+        "license": "Municipal Open Data",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["reproject_to_wgs84", "clip_to_bounds(ny-niskayuna)", "normalize_material_fields"],
+        "completeness": "May be incomplete without DPW GIS; treat as indicative.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "main_breaks",
+      "label": "Main Breaks / Repairs",
+      "group": "Distribution",
+      "type": "geojson",
+      "geometry": "point",
+      "path": "/data/main_breaks.geojson",
+      "default_visible": false,
+      "min_zoom": 10,
+      "max_zoom": 24,
+      "style": { "point_radius": 5, "point_opacity": 0.8, "color": "#dc2626" },
+      "legend": { "swatch": "dot", "text": "Repairs", "color": "#dc2626" },
+      "provenance": {
+        "source_name": "Town Work Orders / Open Records",
+        "source_url": "Municipal Records",
+        "license": "Municipal Open Data",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["geocode_or_snap_to_mains", "normalize_dates"],
+        "completeness": "Dependent on record quality; older events may be missing.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "salt_priority_roads",
+      "label": "Priority Salting Roads",
+      "group": "Salt Exposure",
+      "type": "geojson",
+      "geometry": "line",
+      "path": "/data/salt_priority_roads.geojson",
+      "default_visible": false,
+      "min_zoom": 10,
+      "max_zoom": 24,
+      "style": { "stroke_width": 2, "stroke_opacity": 0.45, "dash": [2, 6], "color": "#f59e0b" },
+      "legend": { "swatch": "line", "text": "Priority Salting", "color": "#f59e0b" },
+      "provenance": {
+        "source_name": "Town/County Winter Route Data (Derived)",
+        "source_url": "Derived from road classification",
+        "license": "Derived Data",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["clip_to_bounds(ny-niskayuna)", "tag_priority_classes"],
+        "completeness": "If derived, represents proxy priority not confirmed policy.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "storm_inlets",
+      "label": "Storm Inlets / Catch Basins",
+      "group": "Stormwater",
+      "type": "geojson",
+      "geometry": "point",
+      "path": "/data/storm_inlets.geojson",
+      "default_visible": false,
+      "min_zoom": 12,
+      "max_zoom": 24,
+      "style": { "point_radius": 4, "point_opacity": 0.75, "color": "#8b5cf6" },
+      "legend": { "swatch": "dot", "text": "Stormwater Entry", "color": "#8b5cf6" },
+      "tooltip": { "text": "Stormwater entry — runoff may concentrate here." },
+      "provenance": {
+        "source_name": "Town MS4 / DPW GIS (Partial)",
+        "source_url": "Municipal Records",
+        "license": "Municipal Open Data",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["reproject_to_wgs84", "clip_to_bounds(ny-niskayuna)"],
+        "completeness": "Often incomplete; treat as partial coverage.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "storm_outfalls",
+      "label": "Stormwater Outfalls",
+      "group": "Stormwater",
+      "type": "geojson",
+      "geometry": "point",
+      "path": "/data/storm_outfalls.geojson",
+      "default_visible": false,
+      "min_zoom": 9,
+      "max_zoom": 24,
+      "style": { "point_radius": 5, "point_opacity": 0.8, "color": "#6366f1" },
+      "legend": { "swatch": "dot", "text": "Outfalls", "color": "#6366f1" },
+      "tooltip": { "text": "Stormwater discharge point." },
+      "provenance": {
+        "source_name": "NYS DEC (Stormwater Outfalls)",
+        "source_url": "https://gis.ny.gov",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["filter_region(ny-niskayuna)", "reproject_to_wgs84"],
+        "completeness": "Statewide dataset; local accuracy may vary.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "flow_accumulation",
+      "label": "Runoff Flow Corridors",
+      "group": "Topography",
+      "type": "geojson",
+      "geometry": "line",
+      "path": "/data/flow_accumulation.geojson",
+      "default_visible": false,
+      "min_zoom": 11,
+      "max_zoom": 24,
+      "style": { "stroke_width": 1, "stroke_opacity": 0.25, "color": "#06b6d4" },
+      "legend": { "swatch": "line", "text": "Runoff Corridors", "color": "#06b6d4" },
+      "provenance": {
+        "source_name": "Derived (USGS DEM)",
+        "source_url": "https://nationalmap.gov",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["download_dem", "fill_sinks", "flow_direction", "flow_accumulation", "threshold_to_streamlines", "simplify(tolerance=0.00002)"],
+        "completeness": "Derived model; represents likely runoff paths, not measured flow.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "ponding_zones",
+      "label": "Low Points / Ponding Zones",
+      "group": "Topography",
+      "type": "geojson",
+      "geometry": "polygon",
+      "path": "/data/ponding_zones.geojson",
+      "default_visible": false,
+      "min_zoom": 12,
+      "max_zoom": 24,
+      "style": { "stroke": false, "fill": true, "fill_opacity": 0.08, "color": "#0891b2" },
+      "legend": { "swatch": "fill", "text": "Low Points", "color": "#0891b2" },
+      "provenance": {
+        "source_name": "Derived (USGS DEM)",
+        "source_url": "https://nationalmap.gov",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["download_dem", "identify_depressions", "vectorize_polygons", "simplify(tolerance=0.00002)"],
+        "completeness": "Derived model; indicates likely ponding, not observed flooding.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "soils_hydrologic_group",
+      "label": "Soils (Hydrologic Group)",
+      "group": "Subsurface",
+      "type": "geojson",
+      "geometry": "polygon",
+      "path": "/data/soils_hydrologic_group.geojson",
+      "default_visible": false,
+      "min_zoom": 10,
+      "max_zoom": 24,
+      "style": { "fill": true, "fill_opacity": 0.10, "categorical_color_by": "hydgrp" },
+      "legend": { "swatch": "categories", "category_field": "hydgrp" },
+      "provenance": {
+        "source_name": "USDA NRCS (SSURGO/Soils)",
+        "source_url": "https://websoilsurvey.nrcs.usda.gov",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["clip_to_bounds(ny-niskayuna)", "select_fields(hydgrp)", "reproject_to_wgs84", "simplify(tolerance=0.00005)"],
+        "completeness": "Generalized; local variability exists.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "surficial_geology",
+      "label": "Surficial Geology",
+      "group": "Subsurface",
+      "type": "geojson",
+      "geometry": "polygon",
+      "path": "/data/surficial_geology.geojson",
+      "default_visible": false,
+      "min_zoom": 9,
+      "max_zoom": 24,
+      "style": { "fill": true, "fill_opacity": 0.08, "color": "#84cc16" },
+      "legend": { "swatch": "fill", "text": "Geology", "color": "#84cc16" },
+      "provenance": {
+        "source_name": "NYS/USGS Surficial Geology",
+        "source_url": "https://mrdata.usgs.gov",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["clip_to_bounds(ny-niskayuna)", "reproject_to_wgs84", "simplify(tolerance=0.00007)"],
+        "completeness": "Regional scale; not parcel-precision.",
+        "attribution_required": true
+      }
+    },
+    {
+      "id": "recharge_zones",
+      "label": "Recharge / Protection Zones",
+      "group": "Subsurface",
+      "type": "geojson",
+      "geometry": "polygon",
+      "path": "/data/recharge_zones.geojson",
+      "default_visible": false,
+      "min_zoom": 9,
+      "max_zoom": 24,
+      "style": { "stroke": true, "stroke_width": 1, "fill": true, "fill_opacity": 0.05, "color": "#22c55e" },
+      "legend": { "swatch": "fill", "text": "Recharge Zones", "color": "#22c55e" },
+      "provenance": {
+        "source_name": "State/Local Wellhead Protection / Aquifer Data",
+        "source_url": "NYS DEC",
+        "license": "Public Domain",
+        "fetched_at": "AUTO_FROM_BUILD",
+        "transforms": ["clip_to_bounds(ny-niskayuna)", "reproject_to_wgs84"],
+        "completeness": "May not exist for all areas; omit if unavailable.",
+        "attribution_required": true
+      }
+    }
+  ],
+  "analysis_recipes": [
+    {
+      "id": "proximity_buffer_overlay",
+      "label": "Proximity Buffer",
+      "description": "Show nearby features within a selected distance for quick contextual reasoning.",
+      "controls": [
+        { "id": "buffer_ft", "type": "select", "values": [25, 50, 100, 250], "default": 100 }
+      ],
+      "behavior": {
+        "on_feature_select": {
+          "draw_buffer": true,
+          "highlight_layers": ["water_mains", "storm_inlets", "salt_priority_roads", "flow_accumulation"],
+          "max_highlight_features": 200
+        }
+      }
+    },
+    {
+      "id": "inlet_to_main_proximity",
+      "label": "Inlets ↔ Mains Proximity",
+      "description": "Highlight mains near stormwater entry points to suggest potential interaction zones.",
+      "controls": [
+        { "id": "buffer_ft", "type": "select", "values": [25, 50, 100, 250], "default": 100 },
+        { "id": "min_main_age_years", "type": "number", "default": 30 }
+      ],
+      "behavior": {
+        "compute_on_load": false,
+        "compute_on_toggle": true,
+        "output": { "type": "derived_geojson", "id": "derived_inlet_main_candidates", "path": "/data/derived/inlet_main_candidates.geojson" }
+      }
+    },
+    {
+      "id": "infiltration_sensitivity_overlay",
+      "label": "Infiltration Sensitivity",
+      "description": "Emphasize areas where soils and terrain suggest higher likelihood of seepage.",
+      "controls": [
+        { "id": "include_soil_groups", "type": "multiselect", "values": ["A", "B", "C", "D"], "default": ["A", "B"] }
+      ],
+      "behavior": {
+        "on_mode_enter": { "dim_nonmatching_polygons": true },
+        "on_feature_select": { "show_context": true }
+      }
+    },
+    {
+      "id": "click_context_highlight",
+      "label": "Click Context Highlight",
+      "description": "On click, softly emphasize related layers and intersections without adding clutter.",
+      "controls": [
+        { "id": "context_radius_ft", "type": "select", "values": [50, 100, 250], "default": 100 }
+      ],
+      "behavior": {
+        "on_feature_select": {
+          "highlight_layers": ["water_mains", "storm_inlets", "storm_outfalls", "salt_priority_roads", "flow_accumulation"],
+          "highlight_style": { "weight": 3, "opacity": 0.8, "color": "#fbbf24" },
+          "duration_ms": 2000
+        }
+      }
+    }
+  ]
+}
