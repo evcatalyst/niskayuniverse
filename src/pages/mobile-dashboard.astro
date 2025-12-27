@@ -1,0 +1,1151 @@
+---
+import '../styles/global.css';
+import { siteConfig, withBasePath } from '../lib/siteConfig.js';
+
+const baseHref = withBasePath('/');
+const registryUrl = withBasePath('config/layers.registry.json');
+const [lat, lng] = siteConfig.map.center;
+const zoom = siteConfig.map.zoom;
+---
+
+<!doctype html>
+<html lang="en" data-base-path={baseHref} data-registry={registryUrl}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>{siteConfig.municipalityName} Water Map</title>
+    <base href={baseHref} />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      /* ===== Reset & Base ===== */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      :root {
+        /* Safe area constants for iOS */
+        --safe-area-inset-top: env(safe-area-inset-top, 0px);
+        --safe-area-inset-right: env(safe-area-inset-right, 0px);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-area-inset-left: env(safe-area-inset-left, 0px);
+        
+        /* Design tokens */
+        --header-height: 44px;
+        --control-size: 44px;
+        --control-gap: 8px;
+        --panel-peek-height: 80px;
+        --panel-mid-height: 55vh;
+        --border-radius: 12px;
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        --shadow-heavy: 0 4px 20px rgba(0, 0, 0, 0.25);
+      }
+
+      html, body {
+        height: 100%;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ===== Map Container (Full Screen) ===== */
+      #map-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 0;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ===== Top-Left Header ===== */
+      .header {
+        position: fixed;
+        top: calc(var(--safe-area-inset-top) + 8px);
+        left: calc(var(--safe-area-inset-left) + 8px);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        padding: 8px 12px;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        z-index: 1000;
+        max-width: calc(100vw - var(--safe-area-inset-left) - var(--safe-area-inset-right) - 16px - 120px);
+      }
+
+      .header-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .header-links {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+        font-size: 11px;
+      }
+
+      .header-link {
+        color: #0ea5e9;
+        text-decoration: none;
+        padding: 2px 4px;
+      }
+
+      .header-link:active {
+        opacity: 0.7;
+      }
+
+      /* ===== Search Input (Below Header) ===== */
+      .search-box {
+        position: fixed;
+        top: calc(var(--safe-area-inset-top) + 8px + var(--header-height) + 8px);
+        left: calc(var(--safe-area-inset-left) + 8px);
+        right: calc(var(--safe-area-inset-right) + 8px + 56px);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        z-index: 1000;
+        padding: 8px 12px;
+        display: none; /* Hidden in MVP, can be enabled later */
+      }
+
+      .search-input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        outline: none;
+        color: #1e293b;
+      }
+
+      .search-input::placeholder {
+        color: #94a3b8;
+      }
+
+      /* ===== Right-Side Vertical Control Stack ===== */
+      .control-stack {
+        position: fixed;
+        top: calc(var(--safe-area-inset-top) + 8px);
+        right: calc(var(--safe-area-inset-right) + 8px);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: var(--control-gap);
+      }
+
+      .control-btn {
+        width: var(--control-size);
+        height: var(--control-size);
+        min-height: 44px;
+        min-width: 44px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #1e293b;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .control-btn:active {
+        background: rgba(226, 232, 240, 0.95);
+        transform: scale(0.95);
+      }
+
+      /* ===== Bottom-Right Info Button ===== */
+      .info-btn {
+        position: fixed;
+        bottom: calc(var(--safe-area-inset-bottom) + var(--panel-peek-height) + 16px);
+        right: calc(var(--safe-area-inset-right) + 8px);
+        width: var(--control-size);
+        height: var(--control-size);
+        min-height: 44px;
+        min-width: 44px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 50%;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 600;
+        color: #0ea5e9;
+        cursor: pointer;
+        z-index: 1000;
+      }
+
+      .info-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* ===== Layers Panel (Bottom Sheet) ===== */
+      .layers-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        box-shadow: var(--shadow-heavy);
+        z-index: 2000;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: var(--safe-area-inset-bottom);
+      }
+
+      .layers-panel.state-peek {
+        transform: translateY(calc(100% - var(--panel-peek-height)));
+      }
+
+      .layers-panel.state-mid {
+        transform: translateY(calc(100% - var(--panel-mid-height)));
+      }
+
+      .layers-panel.state-expanded {
+        transform: translateY(0);
+      }
+
+      .panel-handle-area {
+        padding: 8px 0 12px;
+        cursor: grab;
+        display: flex;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .panel-handle {
+        width: 36px;
+        height: 4px;
+        background: #cbd5e1;
+        border-radius: 2px;
+      }
+
+      .panel-header {
+        padding: 0 16px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+      }
+
+      .panel-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 12px;
+      }
+
+      /* Analysis Mode Selector */
+      .mode-selector {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+
+      .mode-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        min-height: 44px;
+      }
+
+      .mode-btn.active {
+        background: #0ea5e9;
+        color: white;
+        border-color: #0ea5e9;
+      }
+
+      .mode-btn:active {
+        opacity: 0.8;
+      }
+
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px;
+      }
+
+      /* Layer Groups */
+      .layer-group {
+        margin-bottom: 20px;
+      }
+
+      .layer-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .layer-group-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+
+      .layer-toggle {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        cursor: pointer;
+        min-height: 44px;
+      }
+
+      .layer-toggle input[type="checkbox"],
+      .layer-toggle input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 12px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .layer-label {
+        font-size: 15px;
+        color: #1e293b;
+        flex: 1;
+      }
+
+      /* ===== Legend Modal ===== */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        padding-top: calc(var(--safe-area-inset-top) + 20px);
+        padding-bottom: calc(var(--safe-area-inset-bottom) + 20px);
+      }
+
+      .modal-overlay.visible {
+        display: flex;
+      }
+
+      .modal-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-heavy);
+        max-width: 400px;
+        max-height: 80vh;
+        width: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal-header {
+        padding: 16px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+
+      .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+      }
+
+      .modal-close {
+        width: 32px;
+        height: 32px;
+        min-width: 44px;
+        min-height: 44px;
+        background: #f1f5f9;
+        border: none;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #64748b;
+        cursor: pointer;
+        margin: -8px -8px -8px 0;
+      }
+
+      .modal-close:active {
+        background: #e2e8f0;
+      }
+
+      .modal-content {
+        padding: 16px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        flex: 1;
+      }
+
+      /* Legend Items */
+      .legend-section {
+        margin-bottom: 16px;
+      }
+
+      .legend-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .legend-section-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 6px 0;
+        font-size: 14px;
+        color: #475569;
+      }
+
+      .legend-swatch {
+        width: 24px;
+        height: 16px;
+        margin-right: 10px;
+        border-radius: 3px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+      }
+
+      .legend-swatch.line {
+        height: 3px;
+        border: none;
+      }
+
+      .legend-swatch.dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-left: 6px;
+        margin-right: 16px;
+      }
+
+      /* About Content */
+      .about-section {
+        margin-bottom: 20px;
+      }
+
+      .about-section h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 8px;
+      }
+
+      .about-section p, .about-section li {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #475569;
+        margin-bottom: 8px;
+      }
+
+      .about-section ul {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+
+      .provenance-item {
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .provenance-item:last-child {
+        border-bottom: none;
+      }
+
+      .provenance-title {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+      }
+
+      .provenance-detail {
+        font-size: 13px;
+        color: #64748b;
+        margin: 2px 0;
+      }
+
+      .provenance-link {
+        color: #0ea5e9;
+        text-decoration: none;
+      }
+
+      .provenance-link:active {
+        opacity: 0.7;
+      }
+
+      /* Utility */
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Map Container (Always Visible) -->
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+
+    <!-- Top-Left Header -->
+    <header class="header">
+      <h1 class="header-title">Water Map</h1>
+      <div class="header-links">
+        <a href="#" class="header-link" id="link-about">About</a>
+        <a href="#" class="header-link" id="link-key">Key</a>
+      </div>
+    </header>
+
+    <!-- Search Box (Optional - Hidden by default) -->
+    <div class="search-box hidden" id="search-box">
+      <input type="text" class="search-input" placeholder="Search address or place..." id="search-input" />
+    </div>
+
+    <!-- Right-Side Control Stack -->
+    <div class="control-stack">
+      <button class="control-btn" id="btn-zoom-in" aria-label="Zoom in">+</button>
+      <button class="control-btn" id="btn-zoom-out" aria-label="Zoom out">−</button>
+      <button class="control-btn" id="btn-layers" aria-label="Layers">≡</button>
+    </div>
+
+    <!-- Bottom-Right Info Button -->
+    <button class="info-btn" id="btn-info" aria-label="About">i</button>
+
+    <!-- Layers Panel (Bottom Sheet) -->
+    <div class="layers-panel state-peek" id="layers-panel">
+      <div class="panel-handle-area" id="panel-handle-area">
+        <div class="panel-handle"></div>
+      </div>
+      
+      <div class="panel-header">
+        <h2 class="panel-title">Layers</h2>
+        
+        <!-- Analysis Mode Selector -->
+        <div class="mode-selector" id="mode-selector">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <div class="panel-content" id="panel-content">
+        <!-- Layer toggles populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Legend Modal -->
+    <div class="modal-overlay" id="legend-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title">Legend</h2>
+          <button class="modal-close" id="close-legend" aria-label="Close">×</button>
+        </div>
+        <div class="modal-content" id="legend-content">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="about-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title">About & Data Sources</h2>
+          <button class="modal-close" id="close-about" aria-label="Close">×</button>
+        </div>
+        <div class="modal-content" id="about-content">
+          <div class="about-section">
+            <h3>Water Distribution Dashboard</h3>
+            <p>This mobile-first map interface provides access to water infrastructure and quality data for {siteConfig.municipalityName}.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>Data Sources</h3>
+            <div id="provenance-list">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="about-section">
+            <h3>Base Map</h3>
+            <p class="provenance-detail">
+              © <a href="https://www.openstreetmap.org/copyright" class="provenance-link" target="_blank" rel="noopener">OpenStreetMap contributors</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script define:vars={{ lat, lng, zoom }}>
+      // ===== Configuration =====
+      const config = {
+        basePath: document.documentElement.dataset.basePath,
+        registryUrl: document.documentElement.dataset.registry,
+        mapCenter: [lat, lng],
+        mapZoom: zoom,
+      };
+
+      // ===== State =====
+      let map;
+      let registry = null;
+      let layers = new Map(); // layerId -> Leaflet layer
+      let layerVisibility = new Map(); // layerId -> boolean
+      let currentMode = 'overview';
+      let panelState = 'peek'; // peek | mid | expanded
+
+      // ===== Utility Functions =====
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function withBasePath(path) {
+        if (!path) return path;
+        if (path.startsWith('http')) return path;
+        const base = config.basePath || '/';
+        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+        return base + cleanPath;
+      }
+
+      // ===== Load Registry =====
+      async function loadRegistry() {
+        try {
+          const res = await fetch(config.registryUrl);
+          if (!res.ok) throw new Error(`Failed to load registry (${res.status})`);
+          registry = await res.json();
+          console.log('Registry loaded:', registry);
+          return registry;
+        } catch (error) {
+          console.error('Error loading registry:', error);
+          return null;
+        }
+      }
+
+      // ===== Panel State Management =====
+      const layersPanel = document.getElementById('layers-panel');
+      const handleArea = document.getElementById('panel-handle-area');
+      let touchStartY = 0;
+      let touchStartTransform = 0;
+
+      function setPanelState(state) {
+        panelState = state;
+        layersPanel.className = `layers-panel state-${state}`;
+      }
+
+      handleArea.addEventListener('click', () => {
+        if (panelState === 'peek') setPanelState('mid');
+        else if (panelState === 'mid') setPanelState('expanded');
+        else setPanelState('peek');
+      });
+
+      // Touch drag support
+      handleArea.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        const rect = layersPanel.getBoundingClientRect();
+        touchStartTransform = window.innerHeight - rect.top;
+      }, { passive: true });
+
+      handleArea.addEventListener('touchmove', (e) => {
+        const deltaY = e.touches[0].clientY - touchStartY;
+        const newTransform = touchStartTransform - deltaY;
+        const percentage = (newTransform / window.innerHeight) * 100;
+        
+        if (percentage < 10) setPanelState('peek');
+        else if (percentage < 60) setPanelState('mid');
+        else setPanelState('expanded');
+      }, { passive: true });
+
+      // ===== Modal Management =====
+      const legendModal = document.getElementById('legend-modal');
+      const aboutModal = document.getElementById('about-modal');
+      const closeLegend = document.getElementById('close-legend');
+      const closeAbout = document.getElementById('close-about');
+      const linkKey = document.getElementById('link-key');
+      const linkAbout = document.getElementById('link-about');
+      const btnInfo = document.getElementById('btn-info');
+      const btnLayers = document.getElementById('btn-layers');
+
+      function showModal(modal) {
+        modal.classList.add('visible');
+      }
+
+      function hideModal(modal) {
+        modal.classList.remove('visible');
+      }
+
+      linkKey.addEventListener('click', (e) => {
+        e.preventDefault();
+        showModal(legendModal);
+      });
+
+      linkAbout.addEventListener('click', (e) => {
+        e.preventDefault();
+        showModal(aboutModal);
+      });
+
+      btnInfo.addEventListener('click', () => {
+        showModal(aboutModal);
+      });
+
+      btnLayers.addEventListener('click', () => {
+        if (panelState === 'peek') setPanelState('mid');
+        else setPanelState('peek');
+      });
+
+      closeLegend.addEventListener('click', () => hideModal(legendModal));
+      closeAbout.addEventListener('click', () => hideModal(aboutModal));
+
+      legendModal.addEventListener('click', (e) => {
+        if (e.target === legendModal) hideModal(legendModal);
+      });
+
+      aboutModal.addEventListener('click', (e) => {
+        if (e.target === aboutModal) hideModal(aboutModal);
+      });
+
+      // ===== Zoom Controls =====
+      const btnZoomIn = document.getElementById('btn-zoom-in');
+      const btnZoomOut = document.getElementById('btn-zoom-out');
+
+      btnZoomIn.addEventListener('click', () => {
+        if (map) map.zoomIn();
+      });
+
+      btnZoomOut.addEventListener('click', () => {
+        if (map) map.zoomOut();
+      });
+
+      // ===== Render Functions =====
+      function renderModeSelector() {
+        const container = document.getElementById('mode-selector');
+        if (!registry?.modes) return;
+
+        container.innerHTML = registry.modes.slice(0, 4).map(mode => `
+          <button class="mode-btn ${mode.id === currentMode ? 'active' : ''}" 
+                  data-mode="${escapeHtml(mode.id)}">
+            ${escapeHtml(mode.label)}
+          </button>
+        `).join('');
+
+        container.querySelectorAll('.mode-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            setMode(btn.dataset.mode);
+          });
+        });
+      }
+
+      function setMode(modeId) {
+        const mode = registry.modes.find(m => m.id === modeId);
+        if (!mode) return;
+
+        currentMode = modeId;
+
+        // Update button states
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.mode === modeId);
+        });
+
+        // Apply layer visibility
+        if (mode.enable_layers) {
+          mode.enable_layers.forEach(layerId => {
+            layerVisibility.set(layerId, true);
+            updateLayerVisibility(layerId, true);
+          });
+        }
+
+        if (mode.disable_layers) {
+          mode.disable_layers.forEach(layerId => {
+            layerVisibility.set(layerId, false);
+            updateLayerVisibility(layerId, false);
+          });
+        }
+
+        updateLayerToggles();
+        renderLegend(mode.legend_profile || 'default');
+      }
+
+      function renderLayerToggles() {
+        const container = document.getElementById('panel-content');
+        if (!registry?.layers) return;
+
+        // Group layers
+        const groups = {};
+        const basemapLayers = [];
+        
+        registry.layers.forEach(layer => {
+          if (layer.group === 'Background' || layer.group === 'Basemap') {
+            basemapLayers.push(layer);
+          } else {
+            if (!groups[layer.group]) groups[layer.group] = [];
+            groups[layer.group].push(layer);
+          }
+        });
+
+        let html = '';
+
+        // Basemap radio group
+        if (basemapLayers.length > 0) {
+          html += `<div class="layer-group"><div class="layer-group-title">Background</div>`;
+          basemapLayers.forEach((layer, idx) => {
+            const checked = idx === 0 ? 'checked' : '';
+            html += `
+              <label class="layer-toggle">
+                <input type="radio" name="basemap" data-layer="${escapeHtml(layer.id)}" ${checked} />
+                <span class="layer-label">${escapeHtml(layer.label)}</span>
+              </label>
+            `;
+          });
+          html += `</div>`;
+        }
+
+        // Overlay groups
+        Object.entries(groups).forEach(([groupName, groupLayers]) => {
+          html += `<div class="layer-group"><div class="layer-group-title">${escapeHtml(groupName)}</div>`;
+          groupLayers.forEach(layer => {
+            const visible = layerVisibility.get(layer.id) !== false;
+            html += `
+              <label class="layer-toggle">
+                <input type="checkbox" data-layer="${escapeHtml(layer.id)}" ${visible ? 'checked' : ''} />
+                <span class="layer-label">${escapeHtml(layer.label)}</span>
+              </label>
+            `;
+          });
+          html += `</div>`;
+        });
+
+        container.innerHTML = html;
+
+        // Add event listeners
+        container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.addEventListener('change', (e) => {
+            const layerId = e.target.dataset.layer;
+            layerVisibility.set(layerId, e.target.checked);
+            updateLayerVisibility(layerId, e.target.checked);
+          });
+        });
+
+        container.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            // Handle basemap switching if needed
+          });
+        });
+      }
+
+      function updateLayerToggles() {
+        document.querySelectorAll('#panel-content input[type="checkbox"]').forEach(cb => {
+          const layerId = cb.dataset.layer;
+          cb.checked = layerVisibility.get(layerId) !== false;
+        });
+      }
+
+      function renderLegend(profileId = 'default') {
+        const container = document.getElementById('legend-content');
+        const profile = registry.legend_profiles?.[profileId];
+        
+        if (!profile?.sections) {
+          container.innerHTML = '<p style="color: #64748b;">No legend available</p>';
+          return;
+        }
+
+        container.innerHTML = profile.sections.map(section => {
+          const sectionLayers = section.items
+            .map(id => registry.layers.find(l => l.id === id))
+            .filter(Boolean)
+            .filter(layer => layerVisibility.get(layer.id) !== false);
+
+          if (sectionLayers.length === 0) return '';
+
+          return `
+            <div class="legend-section">
+              <div class="legend-section-title">${escapeHtml(section.label)}</div>
+              ${sectionLayers.map(layer => renderLegendItems(layer)).join('')}
+            </div>
+          `;
+        }).filter(Boolean).join('');
+      }
+
+      function renderLegendItems(layer) {
+        const legend = layer.legend;
+        if (!legend) return '';
+
+        if (legend.swatch === 'categories' && legend.categories) {
+          return legend.categories.map(cat => `
+            <div class="legend-item">
+              <div class="legend-swatch" style="background-color: ${escapeHtml(cat.color)};"></div>
+              <span>${escapeHtml(cat.label)}</span>
+            </div>
+          `).join('');
+        } else if (legend.swatch === 'line') {
+          const color = layer.style?.color || legend.color || '#64748b';
+          return `
+            <div class="legend-item">
+              <div class="legend-swatch line" style="background-color: ${escapeHtml(color)};"></div>
+              <span>${escapeHtml(legend.text || layer.label)}</span>
+            </div>
+          `;
+        } else if (legend.swatch === 'dot') {
+          const color = layer.style?.color || legend.color || '#64748b';
+          return `
+            <div class="legend-item">
+              <div class="legend-swatch dot" style="background-color: ${escapeHtml(color)};"></div>
+              <span>${escapeHtml(legend.text || layer.label)}</span>
+            </div>
+          `;
+        } else if (legend.swatch === 'fill') {
+          const color = layer.style?.color || legend.color || '#64748b';
+          return `
+            <div class="legend-item">
+              <div class="legend-swatch" style="background-color: ${escapeHtml(color)}; opacity: 0.5;"></div>
+              <span>${escapeHtml(legend.text || layer.label)}</span>
+            </div>
+          `;
+        }
+        return '';
+      }
+
+      function renderProvenance() {
+        const container = document.getElementById('provenance-list');
+        if (!registry?.layers) return;
+
+        const enabledLayers = registry.layers.filter(l => 
+          layerVisibility.get(l.id) !== false && l.provenance
+        );
+
+        if (enabledLayers.length === 0) {
+          container.innerHTML = '<p class="provenance-detail">Enable layers to view data sources.</p>';
+          return;
+        }
+
+        container.innerHTML = enabledLayers.map(layer => {
+          const prov = layer.provenance;
+          const hasUrl = prov.source_url && prov.source_url.startsWith('http');
+          
+          return `
+            <div class="provenance-item">
+              <div class="provenance-title">${escapeHtml(layer.label)}</div>
+              <div class="provenance-detail">Source: ${escapeHtml(prov.source_name)}</div>
+              ${hasUrl ? `<div class="provenance-detail">
+                <a href="${escapeHtml(prov.source_url)}" class="provenance-link" target="_blank" rel="noopener">
+                  View source
+                </a>
+              </div>` : ''}
+              <div class="provenance-detail">License: ${escapeHtml(prov.license)}</div>
+              ${prov.completeness ? `<div class="provenance-detail">${escapeHtml(prov.completeness)}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      // ===== Layer Loading =====
+      async function loadLayer(layerDef) {
+        try {
+          const path = withBasePath(layerDef.path);
+          const res = await fetch(path);
+          
+          if (!res.ok) {
+            console.log(`Layer ${layerDef.id} not available (${res.status})`);
+            return null;
+          }
+
+          let data = await res.json();
+
+          // Convert submissions format if needed
+          if (layerDef.id === 'resident_submissions' && Array.isArray(data)) {
+            data = {
+              type: 'FeatureCollection',
+              features: data
+                .filter(s => s.coordinates?.lat && s.coordinates?.lng)
+                .map(s => ({
+                  type: 'Feature',
+                  properties: s,
+                  geometry: { type: 'Point', coordinates: [s.coordinates.lng, s.coordinates.lat] }
+                }))
+            };
+          }
+
+          const style = layerDef.style || {};
+          const color = style.color || '#64748b';
+
+          if (layerDef.geometry === 'point') {
+            return L.geoJSON(data, {
+              pointToLayer: (feature, latlng) => {
+                return L.circleMarker(latlng, {
+                  radius: style.point_radius || 5,
+                  color: color,
+                  weight: 2,
+                  fillColor: color,
+                  fillOpacity: style.point_opacity || 0.8
+                });
+              },
+              onEachFeature: (feature, layer) => {
+                if (feature.properties) {
+                  const popup = createPopup(layerDef, feature.properties);
+                  if (popup) layer.bindPopup(popup);
+                }
+              }
+            });
+          } else if (layerDef.geometry === 'line') {
+            return L.geoJSON(data, {
+              style: {
+                color: color,
+                weight: style.stroke_width || 2,
+                opacity: style.stroke_opacity || 0.7,
+                dashArray: style.dash ? style.dash.join(', ') : undefined
+              }
+            });
+          } else if (layerDef.geometry === 'polygon') {
+            return L.geoJSON(data, {
+              style: {
+                fillColor: color,
+                fillOpacity: style.fill_opacity || 0.1,
+                color: color,
+                weight: style.stroke_width || 1,
+                opacity: style.stroke_opacity || 0.5
+              }
+            });
+          }
+
+          return null;
+        } catch (error) {
+          console.error(`Error loading layer ${layerDef.id}:`, error);
+          return null;
+        }
+      }
+
+      function createPopup(layerDef, props) {
+        const lines = [];
+        
+        if (props.address) lines.push(`<strong>${escapeHtml(props.address)}</strong>`);
+        if (props.year_built) lines.push(`Year Built: ${escapeHtml(props.year_built)}`);
+        if (props.private_material) lines.push(`Material: ${escapeHtml(props.private_material)}`);
+        if (props.ph) lines.push(`pH: ${escapeHtml(props.ph)}`);
+        if (props.leadPpb) lines.push(`Lead: ${escapeHtml(props.leadPpb)} ppb`);
+        
+        return lines.length > 0 ? lines.join('<br/>') : null;
+      }
+
+      function updateLayerVisibility(layerId, visible) {
+        const layer = layers.get(layerId);
+        if (!layer) return;
+
+        if (visible && !map.hasLayer(layer)) {
+          layer.addTo(map);
+        } else if (!visible && map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+
+        // Update legend when visibility changes
+        const mode = registry.modes.find(m => m.id === currentMode);
+        if (mode) renderLegend(mode.legend_profile || 'default');
+        renderProvenance();
+      }
+
+      // ===== Initialize =====
+      async function init() {
+        // Load registry
+        await loadRegistry();
+        if (!registry) {
+          console.error('Failed to load registry');
+          return;
+        }
+
+        // Initialize map
+        if (typeof L === 'undefined') {
+          console.error('Leaflet not loaded');
+          return;
+        }
+
+        map = L.map('map', {
+          zoomControl: false, // We have custom zoom controls
+          scrollWheelZoom: true
+        }).setView(config.mapCenter, config.mapZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Load layers
+        for (const layerDef of registry.layers) {
+          // Respect minZoom - only load if we might show it
+          if (layerDef.min_zoom && layerDef.min_zoom > config.mapZoom + 3) {
+            console.log(`Skipping ${layerDef.id} - zoom too low`);
+            continue;
+          }
+
+          const layer = await loadLayer(layerDef);
+          if (layer) {
+            layers.set(layerDef.id, layer);
+            
+            const visible = layerDef.default_visible !== false;
+            layerVisibility.set(layerDef.id, visible);
+            
+            if (visible) layer.addTo(map);
+          }
+        }
+
+        // Render UI
+        renderModeSelector();
+        renderLayerToggles();
+        setMode(currentMode);
+        renderProvenance();
+      }
+
+      // Start when DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    </script>
+  </body>
+</html>
