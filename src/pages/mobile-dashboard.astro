@@ -769,7 +769,14 @@ const zoom = siteConfig.map.zoom;
         const container = document.getElementById('mode-selector');
         if (!registry?.modes) return;
 
-        container.innerHTML = registry.modes.slice(0, 4).map(mode => `
+        // Limit to 4 modes for mobile grid layout (2x2)
+        const maxModes = 4;
+        const displayModes = registry.modes.slice(0, maxModes);
+        if (registry.modes.length > maxModes) {
+          console.warn(`Only displaying first ${maxModes} of ${registry.modes.length} modes. Consider adjusting grid layout for more modes.`);
+        }
+
+        container.innerHTML = displayModes.map(mode => `
           <button class="mode-btn ${mode.id === currentMode ? 'active' : ''}" 
                   data-mode="${escapeHtml(mode.id)}">
             ${escapeHtml(mode.label)}
@@ -998,8 +1005,10 @@ const zoom = siteConfig.map.zoom;
 
           let data = await res.json();
 
-          // Convert submissions format if needed
-          if (layerDef.id === 'resident_submissions' && Array.isArray(data)) {
+          // Convert array format to GeoJSON if needed (based on data_format in registry)
+          // Default behavior for backward compatibility with submissions.json
+          if (Array.isArray(data) && data.length > 0 && data[0].coordinates) {
+            // Detect array format with {coordinates: {lat, lng}} structure
             data = {
               type: 'FeatureCollection',
               features: data
