@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Read the CSV file
-const csvPath = path.join(__dirname, '..', 'niskayuna_service_lines_full_normalized.csv');
+const csvPath = path.join(__dirname, '..', 'data', 'source', 'niskayuna_service_lines_full_normalized.csv');
 const csvData = fs.readFileSync(csvPath, 'utf8');
 
 // Parse CSV
