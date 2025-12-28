@@ -180,3 +180,13 @@ GitHub Pages is the expected host. Ensure Pages source is “GitHub Actions” a
 2. Configure repo variables `SERVICE_LINES_URL` / `SUBMISSIONS_URL`.
 3. Run `npm run fetch:data && npm run validate:data`.
 4. Commit and push to `main` to deploy.
+
+## Additional Documentation
+
+For more detailed information, see the documentation in the [`docs/`](docs/) directory:
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical architecture and design
+- [ROADMAP.md](docs/ROADMAP.md) - Project roadmap and future plans
+- [TESTING.md](docs/TESTING.md) - Testing guide and procedures
+- [WATER_DASHBOARD.md](docs/WATER_DASHBOARD.md) - Water dashboard user guide
+- [ANALYTICS_UI.md](docs/ANALYTICS_UI.md) - Analytics UI documentation
+- [MOBILE_UI.md](docs/MOBILE_UI.md) - Mobile UI documentation

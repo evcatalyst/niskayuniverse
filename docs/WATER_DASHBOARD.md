@@ -378,5 +378,5 @@ Guided by principles of simplicity and clarity from design leaders who prioritiz
 
 **Document End**
 
-For technical documentation, see [ARCHITECTURE.md](../ARCHITECTURE.md)  
-For development roadmap, see [ROADMAP.md](../ROADMAP.md)
+For technical documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)  
+For development roadmap, see [ROADMAP.md](ROADMAP.md)
