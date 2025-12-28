@@ -1,4 +1,131 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soil-001",
+        "hydgrp": "B",
+        "description": "Moderately well-drained soils",
+        "infiltration_rate": "moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.920, 42.815],
+            [-73.910, 42.815],
+            [-73.910, 42.810],
+            [-73.920, 42.810],
+            [-73.920, 42.815]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soil-002",
+        "hydgrp": "C",
+        "description": "Somewhat poorly drained soils",
+        "infiltration_rate": "slow"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.910, 42.815],
+            [-73.900, 42.815],
+            [-73.900, 42.810],
+            [-73.910, 42.810],
+            [-73.910, 42.815]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soil-003",
+        "hydgrp": "A",
+        "description": "Well-drained sandy soils",
+        "infiltration_rate": "high"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.920, 42.810],
+            [-73.910, 42.810],
+            [-73.910, 42.805],
+            [-73.920, 42.805],
+            [-73.920, 42.810]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soil-004",
+        "hydgrp": "D",
+        "description": "Poorly drained clay soils",
+        "infiltration_rate": "very_slow"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.900, 42.810],
+            [-73.890, 42.810],
+            [-73.890, 42.805],
+            [-73.900, 42.805],
+            [-73.900, 42.810]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soil-005",
+        "hydgrp": "B",
+        "description": "Moderately well-drained soils",
+        "infiltration_rate": "moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.910, 42.805],
+            [-73.900, 42.805],
+            [-73.900, 42.800],
+            [-73.910, 42.800],
+            [-73.910, 42.805]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soil-006",
+        "hydgrp": "C",
+        "description": "Somewhat poorly drained soils",
+        "infiltration_rate": "slow"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.900, 42.805],
+            [-73.890, 42.805],
+            [-73.890, 42.800],
+            [-73.900, 42.800],
+            [-73.900, 42.805]
+          ]
+        ]
+      }
+    }
+  ]
 }

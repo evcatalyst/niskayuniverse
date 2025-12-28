@@ -1,4 +1,119 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "main-001",
+        "material": "ductile iron",
+        "diameter_inches": 12,
+        "install_year": 1985,
+        "condition": "good"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.920, 42.810],
+          [-73.915, 42.810],
+          [-73.910, 42.810],
+          [-73.905, 42.810]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "main-002",
+        "material": "ductile iron",
+        "diameter_inches": 8,
+        "install_year": 1992,
+        "condition": "good"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.905, 42.810],
+          [-73.905, 42.808],
+          [-73.905, 42.806],
+          [-73.905, 42.804]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "main-003",
+        "material": "cast iron",
+        "diameter_inches": 10,
+        "install_year": 1968,
+        "condition": "fair"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.905, 42.804],
+          [-73.900, 42.804],
+          [-73.895, 42.804],
+          [-73.890, 42.804]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "main-004",
+        "material": "ductile iron",
+        "diameter_inches": 12,
+        "install_year": 1998,
+        "condition": "excellent"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.890, 42.804],
+          [-73.890, 42.802],
+          [-73.890, 42.800],
+          [-73.890, 42.798]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "main-005",
+        "material": "ductile iron",
+        "diameter_inches": 8,
+        "install_year": 2005,
+        "condition": "excellent"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.890, 42.798],
+          [-73.895, 42.798],
+          [-73.900, 42.798],
+          [-73.905, 42.798]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "main-006",
+        "material": "cast iron",
+        "diameter_inches": 6,
+        "install_year": 1975,
+        "condition": "fair"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.915, 42.815],
+          [-73.912, 42.813],
+          [-73.910, 42.811],
+          [-73.908, 42.809]
+        ]
+      }
+    }
+  ]
 }
