@@ -194,6 +194,123 @@ const zoom = siteConfig.map.zoom;
         margin-bottom: 4px;
       }
 
+      /* Debug Panel */
+      .debug-panel {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        font-size: 11px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .debug-panel h4 {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+
+      .debug-item {
+        margin: 6px 0;
+        padding: 4px 8px;
+        background: #f8fafc;
+        border-radius: 4px;
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 10px;
+      }
+
+      .debug-item.error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .debug-item.ok {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .debug-item.warning {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .debug-layer-item {
+        margin: 8px 0;
+        padding: 6px;
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+
+      .debug-layer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+
+      .debug-layer-name {
+        font-weight: 600;
+        color: #334155;
+        font-size: 11px;
+      }
+
+      .debug-layer-status {
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .debug-layer-status.loading {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .debug-layer-status.ok {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .debug-layer-status.error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .debug-layer-details {
+        font-size: 10px;
+        color: #64748b;
+        line-height: 1.4;
+      }
+
+      .debug-zoom-btn {
+        margin-top: 4px;
+        padding: 2px 8px;
+        font-size: 9px;
+        background: #0ea5e9;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .debug-zoom-btn:hover {
+        background: #0284c7;
+      }
+
+      .zoom-hint {
+        margin-top: 4px;
+        padding: 4px 8px;
+        background: #fef3c7;
+        color: #92400e;
+        border-radius: 4px;
+        font-size: 10px;
+      }
+
       /* Information Panel - Slide-in from Bottom */
       .info-panel {
         position: fixed;
@@ -525,6 +642,14 @@ const zoom = siteConfig.map.zoom;
       <div class="layer-toggles" id="layer-toggles">
         <!-- Layer toggles will be populated by JavaScript from registry -->
       </div>
+      
+      <!-- Debug Panel -->
+      <div class="debug-panel" id="debug-panel">
+        <h4>🔍 Debug Info</h4>
+        <div id="debug-content">
+          <!-- Debug content will be populated by JavaScript -->
+        </div>
+      </div>
     </aside>
 
     <!-- Legend -->
@@ -633,6 +758,9 @@ const zoom = siteConfig.map.zoom;
       let layers = new Map(); // layerId -> Leaflet layer object
       let layerVisibility = new Map(); // layerId -> boolean
       let currentMode = 'overview';
+      
+      // Debug state tracking
+      let layerDebugInfo = new Map(); // layerId -> { status, error, features, bounds, url }
 
       // LOD threshold
       const LOD_ZOOM_THRESHOLD = 15;
@@ -655,6 +783,192 @@ const zoom = siteConfig.map.zoom;
         const base = config.basePath || '/';
         const cleanPath = path.startsWith('/') ? path.slice(1) : path;
         return base + cleanPath;
+      }
+
+      // Render debug panel
+      function renderDebugPanel() {
+        const container = document.getElementById('debug-content');
+        if (!container) return;
+
+        const registryStatus = registry ? 'YES' : 'NO';
+        const enabledLayers = Array.from(layerVisibility.entries()).filter(([_, visible]) => visible).length;
+        
+        let html = `
+          <div class="debug-item ${registry ? 'ok' : 'error'}">
+            Registry loaded: <strong>${registryStatus}</strong>
+          </div>
+          <div class="debug-item">
+            Enabled layers: <strong>${enabledLayers}</strong>
+          </div>
+        `;
+
+        // Show per-layer debug info
+        if (registry?.layers) {
+          registry.layers.forEach(layerDef => {
+            const visible = layerVisibility.get(layerDef.id);
+            const debugInfo = layerDebugInfo.get(layerDef.id) || {};
+            const status = debugInfo.status || 'pending';
+            const features = debugInfo.features || 0;
+            const bounds = debugInfo.bounds || 'unknown';
+            const error = debugInfo.error || '';
+            const minZoom = layerDef.min_zoom || 0;
+            const currentZoom = map ? map.getZoom() : 0;
+            const belowMinZoom = currentZoom < minZoom;
+
+            if (visible) {
+              html += `
+                <div class="debug-layer-item">
+                  <div class="debug-layer-header">
+                    <span class="debug-layer-name">${escapeHtml(layerDef.label)}</span>
+                    <span class="debug-layer-status ${status}">${status}</span>
+                  </div>
+                  <div class="debug-layer-details">
+                    ${debugInfo.url ? `URL: ${escapeHtml(debugInfo.url)}<br/>` : ''}
+                    Features: <strong>${features}</strong><br/>
+                    Bounds: <strong>${escapeHtml(String(bounds))}</strong>
+                    ${error ? `<br/><span style="color: #991b1b;">${escapeHtml(error)}</span>` : ''}
+                  </div>
+                  ${belowMinZoom ? `<div class="zoom-hint">⚠️ Zoom in to see (min zoom ${minZoom}, current ${currentZoom})</div>` : ''}
+                  ${status === 'ok' && debugInfo.leafletLayer ? `
+                    <button class="debug-zoom-btn" data-layer="${escapeHtml(layerDef.id)}">
+                      Zoom to Layer
+                    </button>
+                  ` : ''}
+                </div>
+              `;
+            }
+          });
+        }
+
+        container.innerHTML = html;
+
+        // Add zoom button handlers
+        container.querySelectorAll('.debug-zoom-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const layerId = btn.dataset.layer;
+            zoomToLayer(layerId);
+          });
+        });
+      }
+
+      // Zoom to layer helper
+      function zoomToLayer(layerId) {
+        const debugInfo = layerDebugInfo.get(layerId);
+        if (!debugInfo?.leafletLayer || !map) return;
+
+        try {
+          const bounds = debugInfo.leafletLayer.getBounds?.();
+          if (bounds && bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+            console.log(`Zoomed to layer ${layerId}, bounds:`, bounds.toBBoxString?.() || bounds);
+          } else {
+            console.warn(`Layer ${layerId} has no valid bounds`);
+            alert(`Layer ${layerId} has no valid bounds to zoom to`);
+          }
+        } catch (error) {
+          console.error(`Error zooming to layer ${layerId}:`, error);
+          alert(`Error zooming to layer: ${error.message}`);
+        }
+      }
+
+      // Validate GeoJSON structure
+      function validateGeoJSON(data, layerId) {
+        const errors = [];
+        
+        if (!data) {
+          errors.push('Data is null or undefined');
+          return { valid: false, errors };
+        }
+
+        if (typeof data !== 'object') {
+          errors.push('Data is not an object');
+          return { valid: false, errors };
+        }
+
+        // Check type
+        if (!data.type) {
+          errors.push('Missing "type" field');
+        } else if (data.type !== 'FeatureCollection' && data.type !== 'Feature') {
+          errors.push(`Invalid type "${data.type}" (expected FeatureCollection or Feature)`);
+        }
+
+        // Check features for FeatureCollection
+        if (data.type === 'FeatureCollection') {
+          if (!Array.isArray(data.features)) {
+            errors.push('Missing or invalid "features" array');
+          } else if (data.features.length === 0) {
+            errors.push('Features array is empty');
+          }
+        }
+
+        // Check geometry exists
+        if (data.type === 'Feature' && !data.geometry) {
+          errors.push('Feature missing geometry');
+        }
+
+        return { valid: errors.length === 0, errors };
+      }
+
+      // Check if coordinates are in valid WGS84 range
+      function validateCoordinates(geojson) {
+        const errors = [];
+        let minLon = Infinity, maxLon = -Infinity;
+        let minLat = Infinity, maxLat = -Infinity;
+
+        function checkCoord(coord) {
+          const [lon, lat] = coord;
+          if (typeof lon !== 'number' || typeof lat !== 'number') {
+            errors.push(`Invalid coordinate: [${lon}, ${lat}]`);
+            return;
+          }
+          minLon = Math.min(minLon, lon);
+          maxLon = Math.max(maxLon, lon);
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+        }
+
+        function processGeometry(geometry) {
+          if (!geometry || !geometry.coordinates) return;
+          
+          const coords = geometry.coordinates;
+          const type = geometry.type;
+
+          if (type === 'Point') {
+            checkCoord(coords);
+          } else if (type === 'LineString' || type === 'MultiPoint') {
+            coords.forEach(checkCoord);
+          } else if (type === 'Polygon' || type === 'MultiLineString') {
+            coords.forEach(ring => ring.forEach(checkCoord));
+          } else if (type === 'MultiPolygon') {
+            coords.forEach(polygon => polygon.forEach(ring => ring.forEach(checkCoord)));
+          }
+        }
+
+        if (geojson.type === 'FeatureCollection') {
+          geojson.features?.forEach(f => processGeometry(f.geometry));
+        } else if (geojson.type === 'Feature') {
+          processGeometry(geojson.geometry);
+        }
+
+        // Check if coordinates are absurd (likely not WGS84)
+        if (Math.abs(minLat) > 90 || Math.abs(maxLat) > 90) {
+          errors.push(`Latitude out of range (${minLat.toFixed(2)} to ${maxLat.toFixed(2)}). Must be -90 to 90. Data may be in projected coordinates.`);
+        }
+        if (Math.abs(minLon) > 180 || Math.abs(maxLon) > 180) {
+          errors.push(`Longitude out of range (${minLon.toFixed(2)} to ${maxLon.toFixed(2)}). Must be -180 to 180. Data may be in projected coordinates.`);
+        }
+
+        // Check if values are in the millions (common for state plane)
+        if (Math.abs(minLon) > 10000 || Math.abs(maxLon) > 10000 || 
+            Math.abs(minLat) > 10000 || Math.abs(maxLat) > 10000) {
+          errors.push(`Coordinates appear to be in projected system (values in thousands/millions). Must reproject to WGS84 (EPSG:4326).`);
+        }
+
+        return {
+          valid: errors.length === 0,
+          errors,
+          bounds: isFinite(minLon) ? `[${minLon.toFixed(4)}, ${minLat.toFixed(4)}, ${maxLon.toFixed(4)}, ${maxLat.toFixed(4)}]` : 'unknown'
+        };
       }
 
       // Load layer registry
@@ -880,16 +1194,55 @@ const zoom = siteConfig.map.zoom;
 
       // Load a layer from registry
       async function loadLayer(layerDef) {
+        const layerId = layerDef.id;
+        
+        // Initialize debug info
+        layerDebugInfo.set(layerId, { status: 'loading', features: 0, bounds: 'unknown', url: '', error: '' });
+        renderDebugPanel();
+
         try {
           const path = withBasePath(layerDef.path);
+          
+          // Log exact URL
+          console.log(`[${layerId}] Fetching from: ${path}`);
+          layerDebugInfo.set(layerId, { ...layerDebugInfo.get(layerId), url: path });
+          renderDebugPanel();
+          
           const res = await fetch(path);
           
+          // Log HTTP status
+          console.log(`[${layerId}] HTTP status: ${res.status}`);
+          
           if (!res.ok) {
-            console.log(`Layer ${layerDef.id} not available (${res.status})`);
+            const errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+            console.warn(`[${layerId}] ${errorMsg}`);
+            layerDebugInfo.set(layerId, {
+              ...layerDebugInfo.get(layerId),
+              status: 'error',
+              error: errorMsg
+            });
+            renderDebugPanel();
             return null;
           }
 
-          let data = await res.json();
+          // Parse JSON with error handling
+          let data;
+          let responseText;
+          try {
+            responseText = await res.text();
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            const preview = responseText ? responseText.substring(0, 200) : '(empty response)';
+            console.error(`[${layerId}] JSON parse failed. First 200 chars:`, preview);
+            console.error(`[${layerId}] Parse error:`, parseError);
+            layerDebugInfo.set(layerId, {
+              ...layerDebugInfo.get(layerId),
+              status: 'error',
+              error: `JSON parse failed: ${parseError.message}. Preview: ${preview}`
+            });
+            renderDebugPanel();
+            return null;
+          }
           
           // Convert submissions.json format to GeoJSON if needed
           if (layerDef.id === 'resident_submissions' && Array.isArray(data)) {
@@ -903,13 +1256,68 @@ const zoom = siteConfig.map.zoom;
             data = { type: 'FeatureCollection', features };
           }
 
+          // Validate GeoJSON structure
+          const validation = validateGeoJSON(data, layerId);
+          if (!validation.valid) {
+            const errorMsg = `Invalid GeoJSON: ${validation.errors.join(', ')}`;
+            console.error(`[${layerId}] ${errorMsg}`);
+            layerDebugInfo.set(layerId, {
+              ...layerDebugInfo.get(layerId),
+              status: 'error',
+              error: errorMsg
+            });
+            renderDebugPanel();
+            return null;
+          }
+
+          // Validate coordinates and projection
+          const coordValidation = validateCoordinates(data);
+          if (!coordValidation.valid) {
+            const errorMsg = `Coordinate validation failed: ${coordValidation.errors.join('; ')}`;
+            console.error(`[${layerId}] ${errorMsg}`);
+            layerDebugInfo.set(layerId, {
+              ...layerDebugInfo.get(layerId),
+              status: 'error',
+              error: errorMsg,
+              bounds: coordValidation.bounds
+            });
+            renderDebugPanel();
+            return null;
+          }
+
+          // Count features
+          let featureCount = 0;
+          if (data.type === 'FeatureCollection') {
+            featureCount = data.features?.length || 0;
+          } else if (data.type === 'Feature') {
+            featureCount = 1;
+          }
+          console.log(`[${layerId}] Feature count: ${featureCount}`);
+
           let leafletLayer;
+
+          // Apply style fixes for visibility
+          const ensureVisibleStyle = (baseStyle) => {
+            // For service_area_boundary, use bright test values temporarily
+            if (layerId === 'service_area_boundary') {
+              return {
+                ...baseStyle,
+                stroke: true,
+                color: '#ff0000', // Bright red for testing
+                weight: 3,
+                opacity: 1,
+                fillColor: '#ff0000',
+                fillOpacity: 0.2
+              };
+            }
+            return baseStyle;
+          };
 
           if (layerDef.geometry === 'point') {
             leafletLayer = L.geoJSON(data, {
               pointToLayer: (feature, latlng) => {
                 const color = layerDef.style?.color || getLayerColor(layerDef);
-                const radius = layerDef.style?.point_radius || 5;
+                const radius = Math.max(layerDef.style?.point_radius || 5, 4); // Ensure min radius 4
                 const opacity = layerDef.style?.point_opacity || 0.8;
                 
                 return L.circleMarker(latlng, {
@@ -917,7 +1325,7 @@ const zoom = siteConfig.map.zoom;
                   color: color,
                   weight: 2,
                   fillColor: color,
-                  fillOpacity: opacity
+                  fillOpacity: Math.max(opacity, 0.6) // Ensure visible
                 });
               },
               onEachFeature: (feature, layer) => {
@@ -931,13 +1339,15 @@ const zoom = siteConfig.map.zoom;
               }
             });
           } else if (layerDef.geometry === 'line') {
+            const baseStyle = {
+              color: layerDef.style?.color || getLayerColor(layerDef),
+              weight: Math.max(layerDef.style?.stroke_width || 2, 2), // Ensure min width 2
+              opacity: Math.max(layerDef.style?.stroke_opacity || 0.7, 0.5), // Ensure visible
+              dashArray: layerDef.style?.dash ? layerDef.style.dash.join(', ') : undefined
+            };
+            
             leafletLayer = L.geoJSON(data, {
-              style: {
-                color: layerDef.style?.color || getLayerColor(layerDef),
-                weight: layerDef.style?.stroke_width || 2,
-                opacity: layerDef.style?.stroke_opacity || 0.7,
-                dashArray: layerDef.style?.dash ? layerDef.style.dash.join(', ') : undefined
-              },
+              style: baseStyle,
               onEachFeature: (feature, layer) => {
                 if (layerDef.tooltip?.text) {
                   layer.bindTooltip(layerDef.tooltip.text);
@@ -951,44 +1361,91 @@ const zoom = siteConfig.map.zoom;
           } else if (layerDef.geometry === 'polygon') {
             // Handle parcels with LOD
             if (layerDef.id === 'parcels') {
-              return loadParcelsWithLOD(data, layerDef);
-            }
-            
-            leafletLayer = L.geoJSON(data, {
-              style: {
+              leafletLayer = await loadParcelsWithLOD(data, layerDef);
+            } else {
+              const baseStyle = {
                 fillColor: layerDef.style?.color || getLayerColor(layerDef),
-                fillOpacity: layerDef.style?.fill_opacity || 0.1,
+                fillOpacity: Math.max(layerDef.style?.fill_opacity || 0.1, 0.05), // Ensure min opacity
                 color: layerDef.style?.color || getLayerColor(layerDef),
-                weight: layerDef.style?.stroke_width || 1,
-                opacity: layerDef.style?.stroke_opacity || 0.5,
+                stroke: layerDef.style?.stroke !== false, // Ensure stroke enabled
+                weight: Math.max(layerDef.style?.stroke_width || 1, 1),
+                opacity: Math.max(layerDef.style?.stroke_opacity || 0.5, 0.3),
                 dashArray: layerDef.style?.dash ? layerDef.style.dash.join(', ') : undefined
-              },
-              onEachFeature: (feature, layer) => {
-                if (layerDef.tooltip?.text) {
-                  layer.bindTooltip(layerDef.tooltip.text);
-                }
-                if (feature.properties) {
-                  const popupContent = createPopupContent(layerDef, feature.properties);
-                  if (popupContent) layer.bindPopup(popupContent);
-                }
-                
-                // Add hover effect
-                layer.on('mouseover', function () {
-                  this.setStyle({ weight: 2, opacity: 1 });
-                });
-                layer.on('mouseout', function () {
-                  this.setStyle({ 
-                    weight: layerDef.style?.stroke_width || 1, 
-                    opacity: layerDef.style?.stroke_opacity || 0.5 
+              };
+              
+              leafletLayer = L.geoJSON(data, {
+                style: ensureVisibleStyle(baseStyle),
+                onEachFeature: (feature, layer) => {
+                  if (layerDef.tooltip?.text) {
+                    layer.bindTooltip(layerDef.tooltip.text);
+                  }
+                  if (feature.properties) {
+                    const popupContent = createPopupContent(layerDef, feature.properties);
+                    if (popupContent) layer.bindPopup(popupContent);
+                  }
+                  
+                  // Add hover effect
+                  layer.on('mouseover', function () {
+                    this.setStyle({ weight: 2, opacity: 1 });
                   });
-                });
-              }
-            });
+                  layer.on('mouseout', function () {
+                    this.setStyle({ 
+                      weight: layerDef.style?.stroke_width || 1, 
+                      opacity: layerDef.style?.stroke_opacity || 0.5 
+                    });
+                  });
+                }
+              });
+            }
           }
 
+          if (!leafletLayer) {
+            const errorMsg = `Failed to create Leaflet layer (geometry type: ${layerDef.geometry})`;
+            console.error(`[${layerId}] ${errorMsg}`);
+            layerDebugInfo.set(layerId, {
+              ...layerDebugInfo.get(layerId),
+              status: 'error',
+              error: errorMsg
+            });
+            renderDebugPanel();
+            return null;
+          }
+
+          // Get bounds
+          let boundsStr = 'unknown';
+          try {
+            const bounds = leafletLayer.getBounds?.();
+            if (bounds && bounds.isValid()) {
+              boundsStr = bounds.toBBoxString?.() || `[${bounds.getWest()}, ${bounds.getSouth()}, ${bounds.getEast()}, ${bounds.getNorth()}]`;
+              console.log(`[${layerId}] Bounds:`, boundsStr);
+            }
+          } catch (e) {
+            console.warn(`[${layerId}] Could not get bounds:`, e);
+          }
+
+          // Update debug info with success
+          layerDebugInfo.set(layerId, {
+            status: 'ok',
+            features: featureCount,
+            bounds: boundsStr,
+            url: path,
+            error: '',
+            leafletLayer: leafletLayer
+          });
+          renderDebugPanel();
+
+          console.log(`[${layerId}] ✓ Successfully loaded ${featureCount} features`);
           return leafletLayer;
+          
         } catch (error) {
-          console.error(`Error loading layer ${layerDef.id}:`, error);
+          const errorMsg = `Unexpected error: ${error.message}`;
+          console.error(`[${layerId}] ${errorMsg}`, error);
+          layerDebugInfo.set(layerId, {
+            ...layerDebugInfo.get(layerId),
+            status: 'error',
+            error: errorMsg
+          });
+          renderDebugPanel();
           return null;
         }
       }
@@ -1210,10 +1667,14 @@ const zoom = siteConfig.map.zoom;
       // Update layer visibility
       function updateLayerVisibility(layerId, visible) {
         const layer = layers.get(layerId);
-        if (!layer) return;
+        if (!layer) {
+          console.warn(`updateLayerVisibility: Layer ${layerId} not found`);
+          return;
+        }
 
         if (visible && !map.hasLayer(layer)) {
           layer.addTo(map);
+          console.log(`[${layerId}] Added to map`);
           
           // Update LOD for parcels
           if (layer._isLOD) {
@@ -1221,7 +1682,11 @@ const zoom = siteConfig.map.zoom;
           }
         } else if (!visible && map.hasLayer(layer)) {
           layer.remove();
+          console.log(`[${layerId}] Removed from map`);
         }
+        
+        // Refresh debug panel
+        renderDebugPanel();
       }
 
       // Initialize
@@ -1260,6 +1725,8 @@ const zoom = siteConfig.map.zoom;
               layer._updateLOD();
             }
           });
+          // Refresh debug panel to update zoom hints
+          renderDebugPanel();
         });
 
         // Load all layers
@@ -1274,6 +1741,7 @@ const zoom = siteConfig.map.zoom;
             
             if (visible) {
               layer.addTo(map);
+              console.log(`[${layerDef.id}] Added to map (default_visible)`);
             }
           }
         }
@@ -1283,6 +1751,7 @@ const zoom = siteConfig.map.zoom;
         renderLayerToggles();
         renderLegend();
         renderProvenance();
+        renderDebugPanel(); // Initial debug panel render
 
         // Set initial mode
         setMode(currentMode);
