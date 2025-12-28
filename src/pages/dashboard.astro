@@ -1695,6 +1695,11 @@ const zoom = siteConfig.map.zoom;
         await loadRegistry();
         if (!registry) {
           console.error('Failed to load registry');
+          // Show error in debug panel
+          const debugContent = document.getElementById('debug-content');
+          if (debugContent) {
+            debugContent.innerHTML = '<div class="debug-item error"><strong>ERROR:</strong> Failed to load layer registry. Check console for details.</div>';
+          }
           return;
         }
 
@@ -1706,6 +1711,21 @@ const zoom = siteConfig.map.zoom;
           renderLayerToggles();
           renderLegend();
           renderProvenance();
+          
+          // Show Leaflet error in debug panel
+          const debugContent = document.getElementById('debug-content');
+          if (debugContent) {
+            debugContent.innerHTML = `
+              <div class="debug-item error">
+                <strong>ERROR:</strong> Leaflet library failed to load. 
+                Map functionality unavailable. This may be due to ad blocker or network issues.
+              </div>
+              <div class="debug-item ok">
+                Registry loaded: <strong>YES</strong>
+              </div>
+            `;
+          }
+          
           setupEventHandlers();
           return;
         }
