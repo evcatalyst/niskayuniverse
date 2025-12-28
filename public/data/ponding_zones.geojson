@@ -1,4 +1,89 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pond-001",
+        "area_sqft": 1200,
+        "avg_depth_inches": 4,
+        "flood_risk": "moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.913, 42.812],
+            [-73.912, 42.812],
+            [-73.912, 42.811],
+            [-73.913, 42.811],
+            [-73.913, 42.812]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pond-002",
+        "area_sqft": 2400,
+        "avg_depth_inches": 6,
+        "flood_risk": "high"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.900, 42.806],
+            [-73.898, 42.806],
+            [-73.898, 42.804],
+            [-73.900, 42.804],
+            [-73.900, 42.806]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pond-003",
+        "area_sqft": 800,
+        "avg_depth_inches": 3,
+        "flood_risk": "low"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.896, 42.815],
+            [-73.895, 42.815],
+            [-73.895, 42.814],
+            [-73.896, 42.814],
+            [-73.896, 42.815]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pond-004",
+        "area_sqft": 1600,
+        "avg_depth_inches": 5,
+        "flood_risk": "moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.908, 42.800],
+            [-73.906, 42.800],
+            [-73.906, 42.798],
+            [-73.908, 42.798],
+            [-73.908, 42.800]
+          ]
+        ]
+      }
+    }
+  ]
 }

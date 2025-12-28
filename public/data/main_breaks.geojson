@@ -1,4 +1,65 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "break-001",
+        "date": "2023-03-15",
+        "type": "main_break",
+        "severity": "major",
+        "repair_cost": 8500,
+        "downtime_hours": 6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.910, 42.810]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "break-002",
+        "date": "2023-07-22",
+        "type": "leak",
+        "severity": "minor",
+        "repair_cost": 2200,
+        "downtime_hours": 2
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.900, 42.804]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "break-003",
+        "date": "2024-01-10",
+        "type": "main_break",
+        "severity": "moderate",
+        "repair_cost": 5100,
+        "downtime_hours": 4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.895, 42.798]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "break-004",
+        "date": "2024-08-03",
+        "type": "valve_failure",
+        "severity": "minor",
+        "repair_cost": 1800,
+        "downtime_hours": 1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.912, 42.813]
+      }
+    }
+  ]
 }

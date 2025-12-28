@@ -1,4 +1,44 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "outfall-001",
+        "receiving_water": "Mohawk River",
+        "pipe_diameter_inches": 36,
+        "permit_required": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.892, 42.802]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "outfall-002",
+        "receiving_water": "Tributary Creek",
+        "pipe_diameter_inches": 24,
+        "permit_required": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.918, 42.816]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "outfall-003",
+        "receiving_water": "Mohawk River",
+        "pipe_diameter_inches": 30,
+        "permit_required": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.897, 42.797]
+      }
+    }
+  ]
 }

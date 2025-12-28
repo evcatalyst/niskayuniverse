@@ -1,4 +1,47 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "recharge-001",
+        "zone_type": "Primary recharge area",
+        "aquifer_name": "Mohawk Valley Aquifer",
+        "protection_level": "high"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.915, 42.818],
+            [-73.905, 42.818],
+            [-73.905, 42.808],
+            [-73.915, 42.808],
+            [-73.915, 42.818]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "recharge-002",
+        "zone_type": "Secondary recharge area",
+        "aquifer_name": "Local shallow aquifer",
+        "protection_level": "moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.898, 42.812],
+            [-73.888, 42.812],
+            [-73.888, 42.802],
+            [-73.898, 42.802],
+            [-73.898, 42.812]
+          ]
+        ]
+      }
+    }
+  ]
 }

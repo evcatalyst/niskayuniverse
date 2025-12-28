@@ -1,4 +1,109 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-001",
+        "type": "catch_basin",
+        "condition": "good",
+        "last_cleaned": "2024-09-15"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.917, 42.814]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-002",
+        "type": "catch_basin",
+        "condition": "good",
+        "last_cleaned": "2024-08-22"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.912, 42.812]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-003",
+        "type": "storm_drain",
+        "condition": "fair",
+        "last_cleaned": "2024-07-10"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.907, 42.810]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-004",
+        "type": "catch_basin",
+        "condition": "good",
+        "last_cleaned": "2024-09-01"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.902, 42.808]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-005",
+        "type": "storm_drain",
+        "condition": "excellent",
+        "last_cleaned": "2024-10-05"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.898, 42.806]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-006",
+        "type": "catch_basin",
+        "condition": "good",
+        "last_cleaned": "2024-08-15"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.893, 42.804]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-007",
+        "type": "catch_basin",
+        "condition": "fair",
+        "last_cleaned": "2024-06-20"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.915, 42.817]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "inlet-008",
+        "type": "storm_drain",
+        "condition": "good",
+        "last_cleaned": "2024-09-10"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.900, 42.815]
+      }
+    }
+  ]
 }

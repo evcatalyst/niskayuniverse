@@ -1,4 +1,89 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geo-001",
+        "geology_type": "Glacial till",
+        "description": "Unsorted glacial sediment",
+        "permeability": "low_to_moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.920, 42.820],
+            [-73.905, 42.820],
+            [-73.905, 42.810],
+            [-73.920, 42.810],
+            [-73.920, 42.820]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geo-002",
+        "geology_type": "Outwash deposits",
+        "description": "Stratified sand and gravel",
+        "permeability": "high"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.905, 42.820],
+            [-73.890, 42.820],
+            [-73.890, 42.810],
+            [-73.905, 42.810],
+            [-73.905, 42.820]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geo-003",
+        "geology_type": "Lacustrine deposits",
+        "description": "Lake-deposited clay and silt",
+        "permeability": "very_low"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.920, 42.810],
+            [-73.905, 42.810],
+            [-73.905, 42.795],
+            [-73.920, 42.795],
+            [-73.920, 42.810]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geo-004",
+        "geology_type": "Alluvium",
+        "description": "River-deposited sediment",
+        "permeability": "moderate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.905, 42.810],
+            [-73.890, 42.810],
+            [-73.890, 42.795],
+            [-73.905, 42.795],
+            [-73.905, 42.810]
+          ]
+        ]
+      }
+    }
+  ]
 }

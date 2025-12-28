@@ -1,4 +1,87 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "road-001",
+        "name": "Balltown Road",
+        "priority": "high",
+        "salt_application": "heavy",
+        "annual_tonnage": 850
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.920, 42.815],
+          [-73.915, 42.814],
+          [-73.910, 42.813],
+          [-73.905, 42.812],
+          [-73.900, 42.811],
+          [-73.895, 42.810]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "road-002",
+        "name": "Troy Schenectady Road",
+        "priority": "high",
+        "salt_application": "heavy",
+        "annual_tonnage": 1200
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.915, 42.820],
+          [-73.915, 42.815],
+          [-73.915, 42.810],
+          [-73.915, 42.805],
+          [-73.915, 42.800],
+          [-73.915, 42.795]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "road-003",
+        "name": "Rosendale Road",
+        "priority": "medium",
+        "salt_application": "moderate",
+        "annual_tonnage": 450
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.910, 42.807],
+          [-73.905, 42.807],
+          [-73.900, 42.807],
+          [-73.895, 42.807],
+          [-73.890, 42.807]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "road-004",
+        "name": "Consaul Road",
+        "priority": "medium",
+        "salt_application": "moderate",
+        "annual_tonnage": 520
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-73.900, 42.820],
+          [-73.900, 42.815],
+          [-73.900, 42.810],
+          [-73.900, 42.805],
+          [-73.900, 42.800]
+        ]
+      }
+    }
+  ]
 }
